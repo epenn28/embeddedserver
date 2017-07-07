@@ -8,62 +8,6 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 from PyQt5.QtNetwork import QTcpServer, QTcpSocket, QAbstractSocket, QHostAddress
 from PyQt5.QtCore import QThread, QReadWriteLock, QDataStream, pyqtSignal
 from ui_mainwindow import Ui_MainWindow
-
-
-"""
-		self.host = host
-		self.port = port
-		self.stopPressed = False
-		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		self.sock.bind((self.host, self.port))
-
-	def listen(self):
-		self.sock.listen(5)
-		self.sock.setblocking(0)
-		self.stopPressed = False
-		print("Server started and listening")
-			
-		while not self.stopPressed:
-			try:
-				client, address = self.sock.accept()
-				client_thread = threading.Thread(target = self.listenToClient, args = (client, address))
-				client_thread.start()
-			except:
-				print("No connection")
-				pass
-
-	def listenToClient(self, client, address):
-		size = 5
-		while True:
-			try:
-				data = client.recv(size)
-				#print("Raw data:", repr(data), "Decoded data:", hexData)
-				# data is a string representing the data received
-				if data:
-					hexData = binascii.hexlify(data).decode('utf8')  # turns into string of length 10
-					header, packetCount, source, value, footer = hexData[:2], hexData[2:4], hexData[4:6], hexData[6:8], hexData[8:]
-					host, port = address
-
-					print("Received message from address {}".format(host))
-					print("Message header: {} | Packet count: {} | Source: {} | Value: {} | Footer: {}\n".format(header, int(packetCount, 16), source, value, footer))
-					response = data
-					client.send(response)
-				else:
-					raise Exception('Client disconnected')  # this occurs when socket.close happens on the client side
-			except Exception as e:
-				#dataToSend = "0F000000F0"
-				#response = binascii.unhexlify(dataToSend)
-				#client.send(response)
-				#client.close()
-				print("Stopping server, reason:", e)
-				client.close()
-				return False
-				
-	def stopServer(self):
-		self.stopPressed = True
-		print("Stopping server")
-"""
 		
 		
 class Thread(QThread):
@@ -92,13 +36,22 @@ class Thread(QThread):
 		
 		
 class ThreadedServer(QTcpServer):
+	
+	dataOut = pyqtSignal(str)
+	
 	def __init__(self, parent = None):
 		super().__init__(parent)
 		
 	def incomingConnection(self, socketId):
 		thread = Thread(socketId, self)
 		#self.connect(thread, SIGNAL("finished()"), thread, SLOT("deleteLater()"))
+		thread.finished.connect(thread.deleteLater)
+		thread.trigger.connect(self.newData)
 		thread.start()
+		
+	def newData(self, data):
+		output = data.hex()
+		self.dataOut.emit(output)
 
         
 class MyWindow(QMainWindow):
@@ -113,6 +66,8 @@ class MyWindow(QMainWindow):
 		# Connect buttons
 		self.ui.startButton.clicked.connect(self.startServer)
 		self.ui.stopButton.clicked.connect(self.server.close)
+		
+		self.server.dataOut.connect(self.ui.ipValue.setText)
 		
 	def startServer(self):
 		if not self.server.listen(QHostAddress("0.0.0.0"), port_num):
