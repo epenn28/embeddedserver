@@ -1,9 +1,6 @@
 import sys
 import socket
-import select
 import threading
-import codecs
-import binascii
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 from PyQt5.QtNetwork import QTcpServer, QTcpSocket, QAbstractSocket, QHostAddress
 from PyQt5.QtCore import QThread, QReadWriteLock, QDataStream, pyqtSignal
@@ -37,21 +34,29 @@ class Thread(QThread):
 		
 class ThreadedServer(QTcpServer):
 	
-	dataOut = pyqtSignal(str)
+	headerOut = pyqtSignal(str)
+	packetCountOut = pyqtSignal(str)
+	sourceOut = pyqtSignal(str)
+	valueOut = pyqtSignal(str)
+	footerOut = pyqtSignal(str)
 	
 	def __init__(self, parent = None):
 		super().__init__(parent)
 		
 	def incomingConnection(self, socketId):
 		thread = Thread(socketId, self)
-		#self.connect(thread, SIGNAL("finished()"), thread, SLOT("deleteLater()"))
 		thread.finished.connect(thread.deleteLater)
 		thread.trigger.connect(self.newData)
 		thread.start()
 		
 	def newData(self, data):
 		output = data.hex()
-		self.dataOut.emit(output)
+		header, packetCount, source, value, footer = output[:2], str(int(output[2:4], 16)), output[4:6], output[6:8], output[8:]
+		self.headerOut.emit(header)
+		self.packetCountOut.emit(packetCount)
+		self.sourceOut.emit(source)
+		self.valueOut.emit(value)
+		self.footerOut.emit(footer)
 
         
 class MyWindow(QMainWindow):
@@ -67,10 +72,15 @@ class MyWindow(QMainWindow):
 		self.ui.startButton.clicked.connect(self.startServer)
 		self.ui.stopButton.clicked.connect(self.server.close)
 		
-		self.server.dataOut.connect(self.ui.ipValue.setText)
+		self.server.headerOut.connect(self.ui.ipValue.setText)
+		self.server.packetCountOut.connect(self.ui.forwardValue.setText)
+		self.server.sourceOut.connect(self.ui.leftValue.setText)
+		self.server.valueOut.connect(self.ui.rightValue.setText)
+		self.server.footerOut.connect(self.ui.lineValue.setText)
 		
 	def startServer(self):
 		if not self.server.listen(QHostAddress("0.0.0.0"), port_num):
+			# TODO: fix this message box
 			QMessageBox.critical(self, "Raspberry Pi server", QString("Failed to start server: %1").arg(self.server.errorString()))
 			self.close()
 			return
