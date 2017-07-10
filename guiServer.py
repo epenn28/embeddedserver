@@ -10,6 +10,7 @@ from ui_mainwindow import Ui_MainWindow
 class Thread(QThread):
 	
 	trigger = pyqtSignal(bytes)
+	sendAddr = pyqtSignal(str)
 	
 	def __init__(self, socketId, parent = None):
 		super().__init__(parent)
@@ -21,6 +22,8 @@ class Thread(QThread):
 			self.emit(SIGNAL("error(int)"), socket.error())
 			return
 		while socket.state() == QAbstractSocket.ConnectedState:
+			address = QHostAddress(socket.peerAddress()).toString()
+			self.sendAddr.emit(address)
 			data = bytes(5)
 			stream = QDataStream(socket)
 			stream.setVersion(QDataStream.Qt_5_8)
@@ -39,6 +42,7 @@ class ThreadedServer(QTcpServer):
 	sourceOut = pyqtSignal(str)
 	valueOut = pyqtSignal(str)
 	footerOut = pyqtSignal(str)
+	ipOut = pyqtSignal(str)
 	
 	def __init__(self, parent = None):
 		super().__init__(parent)
@@ -47,6 +51,7 @@ class ThreadedServer(QTcpServer):
 		thread = Thread(socketId, self)
 		thread.finished.connect(thread.deleteLater)
 		thread.trigger.connect(self.newData)
+		thread.sendAddr.connect(self.ipAddress)
 		thread.start()
 		
 	def newData(self, data):
@@ -57,6 +62,9 @@ class ThreadedServer(QTcpServer):
 		self.sourceOut.emit(source)
 		self.valueOut.emit(value)
 		self.footerOut.emit(footer)
+		
+	def ipAddress(self, ip):
+		self.ipOut.emit(ip)
 
         
 class MyWindow(QMainWindow):
@@ -72,7 +80,7 @@ class MyWindow(QMainWindow):
 		self.ui.startButton.clicked.connect(self.startServer)
 		self.ui.stopButton.clicked.connect(self.server.close)
 		
-		self.server.headerOut.connect(self.ui.ipValue.setText)
+		self.server.ipOut.connect(self.ui.ipValue.setText)
 		self.server.packetCountOut.connect(self.ui.forwardValue.setText)
 		self.server.sourceOut.connect(self.ui.leftValue.setText)
 		self.server.valueOut.connect(self.ui.rightValue.setText)
