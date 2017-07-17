@@ -25,7 +25,7 @@ class Thread(QThread):
 		while socket.state() == QAbstractSocket.ConnectedState:
 			data = bytes(5)
 			stream = QDataStream(socket)
-			stream.setVersion(QDataStream.Qt_5_8)
+			stream.setVersion(QDataStream.Qt_5_9)
 			while True:
 				socket.waitForReadyRead(-1)
 				if socket.bytesAvailable() >= 5:
@@ -91,15 +91,24 @@ class MyWindow(QMainWindow):
 
 	def convertData(self, data, ip):
 		output = data.hex()
+		#print(repr(output))
 		header, packetCount, source, value, footer = output[:2], str(int(output[2:4], 16)), output[4:6], output[6:8], output[8:]
 
 		# Determine which rover is sending data using static ip address from wifly
 		if "103" in ip:
 			self.ui.ipValue.setText(ip)
-			self.ui.forwardValue.setText(packetCount)
+			self.ui.forwardValue.setText(header)
+			self.ui.leftValue.setText(packetCount)
+			self.ui.rightValue.setText(source)
+			self.ui.lineValue.setText(value)
+			self.ui.xValue.setText(footer)
 		elif "104" in ip:
 			self.ui.ipValue_2.setText(ip)
-			self.ui.forwardValue_2.setText(packetCount)
+			self.ui.forwardValue_2.setText(header)
+			self.ui.leftValue_2.setText(packetCount)
+			self.ui.rightValue_2.setText(source)
+			self.ui.lineValue_2.setText(value)
+			self.ui.xValue_2.setText(footer)
 
 
 port_num = 2000
