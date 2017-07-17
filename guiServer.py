@@ -22,7 +22,7 @@ class Thread(QThread):
 		if not socket.setSocketDescriptor(self.socketId):  # initializes socket, puts into connected state
 			self.emit(SIGNAL("error(int)"), socket.error())
 			return
-		address = QHostAddress(socket.peerAddress()).toString()
+		address = QHostAddress(socket.peerAddress()).toString() + ":" + str(socket.peerPort())
 		#self.sendAddr.emit(address)
 		while socket.state() == QAbstractSocket.ConnectedState:
 			data = bytes(5)
@@ -123,6 +123,7 @@ class MyWindow(QMainWindow):
 	def convertData(self, data, ip):
 		output = data.hex()
 		header, packetCount, source, value, footer = output[:2], str(int(output[2:4], 16)), output[4:6], output[6:8], output[8:]
+		
 		self.ui.ipValue.setText(ip)
 		self.ui.forwardValue.setText(packetCount)
 
