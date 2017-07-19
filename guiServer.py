@@ -112,7 +112,7 @@ class MyWindow(QMainWindow):
 			self.front, self.left, self.right, self.irState, self.lfState = values[:2], values[2:4], values[4:6], values[6:8], values[8:10]
 			self.displaySensorValues(self.rover)
 		elif source == 1:  # encoder
-			self.x, self.y, self.heading, self.previous, = values[:2], values[2:4], values[4:6], values[6:8], values[8:10]
+			self.x, self.y, self.heading, self.previous, dontcare = values[:2], values[2:4], values[4:6], values[6:8], values[8:10]
 			self.displayEncoderValues(self.rover)
 
 		# check footer
