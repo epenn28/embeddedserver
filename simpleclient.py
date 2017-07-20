@@ -3,10 +3,15 @@ import sys
 import binascii
 import time
 
-def sensorPacket():
+def sensorPacket(loopVal):
     header = "0F"
     source = "00"
-    value = "04102011"
+    value = 0x04102011
+    if (loopVal % 3 == 0):
+        value = value + 0x100
+    else:
+        pass
+    value = str(value)
     footer = "F0"
     dataToSend = header + source + value + footer
     message = binascii.unhexlify(dataToSend)
@@ -32,7 +37,7 @@ def main():
     try:
         for i in range(256):
             if (i % 2 == 0):
-                message = sensorPacket()
+                message = sensorPacket(i)
             else:
                 message = encoderPacket()
 

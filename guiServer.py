@@ -3,18 +3,18 @@ import socket
 import threading
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 from PyQt5.QtNetwork import QTcpServer, QTcpSocket, QAbstractSocket, QHostAddress
-from PyQt5.QtCore import QThread, QReadWriteLock, QDataStream, pyqtSignal
+from PyQt5.QtCore import QObject, QThread, QReadWriteLock, QDataStream, pyqtSignal
 from ui_mainwindow import Ui_MainWindow
 
 
-class Thread(QThread):
+class Worker(QObject):
 
 	sendData = pyqtSignal(bytes, str)
 
-	def __init__(self, socketId, parent = None):
-		super().__init__(parent)
+	def __init__(self, socketId):
+		super().__init__()
 		self.socketId = socketId
-		self.guiDisplay = False
+		self.running = True
 
 	def run(self):
 		socket = QTcpSocket()
@@ -22,7 +22,7 @@ class Thread(QThread):
 			self.emit(SIGNAL("error(int)"), socket.error())
 			return
 		address = QHostAddress(socket.peerAddress()).toString() + ":" + str(socket.peerPort())
-		while socket.state() == QAbstractSocket.ConnectedState:
+		while socket.state() == QAbstractSocket.ConnectedState and self.running:
 			data = bytes(8)
 			stream = QDataStream(socket)
 			stream.setVersion(QDataStream.Qt_5_9)
@@ -33,6 +33,9 @@ class Thread(QThread):
 					self.sendData.emit(data, address)
 					break
 
+	def stopWorker(self):
+		self.running = False
+
 
 class ThreadedServer(QTcpServer):
 	dataOut = pyqtSignal(bytes, str)
@@ -42,14 +45,22 @@ class ThreadedServer(QTcpServer):
 		self.client_list = []
 
 	def incomingConnection(self, socketId):
-		thread = Thread(socketId, self)
-		thread.finished.connect(thread.deleteLater)
-		self.client_list.append(thread)
-		thread.sendData.connect(self.newData)
+		worker = Worker(socketId)
+		thread = QThread()
+		self.client_list.append((thread, worker))
+		worker.moveToThread(thread)
+		thread.finished.connect(worker.deleteLater)
+		worker.sendData.connect(self.newData)
+		thread.started.connect(worker.run)
 		thread.start()
 
 	def newData(self, data, ip):
 		self.dataOut.emit(data, ip)
+
+	def closeServer(self):
+		for (thread, worker) in self.client_list:
+			worker.stopWorker()
+		self.close()
 
 
 class MyWindow(QMainWindow):
@@ -75,9 +86,9 @@ class MyWindow(QMainWindow):
 
 		# Connect buttons
 		self.ui.startButton.clicked.connect(self.startServer)
-		self.ui.stopButton.clicked.connect(self.server.close)
+		self.ui.stopButton.clicked.connect(self.server.closeServer)
 
-		self.server.newConnection.connect(self.handleClient)
+		self.server.dataOut.connect(self.calculateNextCommand)
 
 	def startServer(self):
 		if not self.server.listen(QHostAddress("0.0.0.0"), port_num):
@@ -86,13 +97,15 @@ class MyWindow(QMainWindow):
 			self.close()
 			return
 
+	"""
 	def handleClient(self):
 		for thread in self.server.client_list:
-			if thread.guiDisplay == False:
+			if worker.guiDisplay == False:
 				self.server.dataOut.connect(self.calculateNextCommand)
-				thread.guiDisplay = True
+				worker.guiDisplay = True
 			else:  # if already running, do nothing
 				pass
+	"""
 
 	def calculateNextCommand(self, data, address):
 		output = data.hex()
