@@ -92,8 +92,7 @@ class MyWindow(QMainWindow):
 
 	def startServer(self):
 		if not self.server.listen(QHostAddress("0.0.0.0"), port_num):
-			# TODO: fix this message box
-			QMessageBox.critical(self, "Raspberry Pi server", QString("Failed to start server: %1").arg(self.server.errorString()))
+			QMessageBox.critical(self, "Pac-Man server", "Failed to start server")
 			self.close()
 			return
 
