@@ -1,6 +1,7 @@
 import sys
 import socket
 import threading
+from enum import Enum
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
 from PyQt5.QtNetwork import QTcpServer, QTcpSocket, QAbstractSocket, QHostAddress
 from PyQt5.QtCore import QObject, QThread, QReadWriteLock, QDataStream, pyqtSignal
@@ -15,30 +16,34 @@ class Worker(QObject):
 		super().__init__()
 		self.socketId = socketId
 		self.running = True
+		self.socket = None
 
 	def run(self):
-		socket = QTcpSocket()
-		if not socket.setSocketDescriptor(self.socketId):  # initializes socket, puts into connected state
-			self.emit(SIGNAL("error(int)"), socket.error())
+		self.socket = QTcpSocket()
+		if not self.socket.setSocketDescriptor(self.socketId):  # initializes socket, puts into connected state
+			self.emit(SIGNAL("error(int)"), self.socket.error())
 			return
-		address = QHostAddress(socket.peerAddress()).toString() + ":" + str(socket.peerPort())
-		while socket.state() == QAbstractSocket.ConnectedState and self.running:
+		address = QHostAddress(self.socket.peerAddress()).toString() + ":" + str(self.socket.peerPort())
+		while self.socket.state() == QAbstractSocket.ConnectedState and self.running:
 			data = bytes(8)
-			stream = QDataStream(socket)
+			stream = QDataStream(self.socket)
 			stream.setVersion(QDataStream.Qt_5_9)
 			while True:
-				socket.waitForReadyRead(-1)
-				if socket.bytesAvailable() >= 8:
+				self.socket.waitForReadyRead(-1)
+				if self.socket.bytesAvailable() >= 8:
 					data = stream.readRawData(8)
 					self.sendData.emit(data, address)
 					break
 
 	def stopWorker(self):
 		self.running = False
+		data = b"AA00FF"
+		self.socket.write(data)
 
 
 class ThreadedServer(QTcpServer):
 	dataOut = pyqtSignal(bytes, str)
+	serverRunning = pyqtSignal(str)
 
 	def __init__(self, parent = None):
 		super().__init__(parent)
@@ -53,6 +58,7 @@ class ThreadedServer(QTcpServer):
 		worker.sendData.connect(self.newData)
 		thread.started.connect(worker.run)
 		thread.start()
+		self.serverRunning.emit("Running")# ({})".format(len(self.client_list)))
 
 	def newData(self, data, ip):
 		self.dataOut.emit(data, ip)
@@ -64,6 +70,8 @@ class ThreadedServer(QTcpServer):
 
 
 class MyWindow(QMainWindow):
+	stateChanged = pyqtSignal(str)
+
 	def __init__(self, parent = None):
 		self.ip = ""
 		self.front = ""
@@ -78,6 +86,8 @@ class MyWindow(QMainWindow):
 		self.rover = ""
 
 		super().__init__(parent)
+		self.serverState = "Init"
+		self.stateChanged.emit(self.serverState)
 		self.ui = Ui_MainWindow()
 		self.ui.setupUi(self)
 
@@ -86,15 +96,27 @@ class MyWindow(QMainWindow):
 
 		# Connect buttons
 		self.ui.startButton.clicked.connect(self.startServer)
-		self.ui.stopButton.clicked.connect(self.server.closeServer)
+		self.ui.stopButton.clicked.connect(self.stopServer)
+		self.stateChanged.connect(self.ui.statusValue.setText)
 
 		self.server.dataOut.connect(self.calculateNextCommand)
+		self.server.serverRunning.connect(self.ui.statusValue.setText)
+
+		self.serverState = "Stopped"
+		self.stateChanged.emit(self.serverState)
 
 	def startServer(self):
+		self.serverState = "Started"
+		self.stateChanged.emit(self.serverState)
 		if not self.server.listen(QHostAddress("0.0.0.0"), port_num):
 			QMessageBox.critical(self, "Pac-Man server", "Failed to start server")
 			self.close()
 			return
+
+	def stopServer(self):
+		self.serverState = "Stopped"
+		self.stateChanged.emit(self.serverState)
+		self.server.closeServer()
 
 	"""
 	def handleClient(self):
