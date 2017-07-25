@@ -29,7 +29,7 @@ def encoderPacket():
 def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    
+
     address = ('192.168.1.100', 2000)
 
     sock.connect(address)
@@ -49,10 +49,11 @@ def main():
 
     finally:
         print("Closing socket")
-        #data = sock.recv(6)
-        #print("Data received:", data)
+        data = sock.recv(6)
+        print("Data received:", data)
         sock.shutdown(socket.SHUT_RDWR)
         sock.close()
+        print("Socket closed")
 
 if __name__ == '__main__':
     main()

@@ -16,29 +16,33 @@ class Worker(QObject):
 		super().__init__()
 		self.socketId = socketId
 		self.running = True
-		self.socket = None
+		self.socket = QTcpSocket(self)
 
 	def run(self):
-		self.socket = QTcpSocket()
 		if not self.socket.setSocketDescriptor(self.socketId):  # initializes socket, puts into connected state
 			self.emit(SIGNAL("error(int)"), self.socket.error())
 			return
-		address = QHostAddress(self.socket.peerAddress()).toString() + ":" + str(self.socket.peerPort())
-		while self.socket.state() == QAbstractSocket.ConnectedState and self.running:
+		self.socket.readyRead.connect(self.read)
+		self.socket.disconnected.connect(self.stopWorker)
+
+	def read(self):
+		if self.running:
+			address = QHostAddress(self.socket.peerAddress()).toString() + ":" + str(self.socket.peerPort())
 			data = bytes(8)
 			stream = QDataStream(self.socket)
 			stream.setVersion(QDataStream.Qt_5_9)
-			while True:
-				self.socket.waitForReadyRead(-1)
-				if self.socket.bytesAvailable() >= 8:
-					data = stream.readRawData(8)
-					self.sendData.emit(data, address)
-					break
+			if self.socket.bytesAvailable() >= 8:
+				data = stream.readRawData(8)
+				outputData = b"AA00FF" # outputting data like this works- handle algorithm at this point?
+				self.socket.write(outputData)
+				self.sendData.emit(data, address)
+
+	def send(self): # must be called from worker object's thread, not within worker itself
+		data = b"AA00FF"
+		self.socket.write(data)
 
 	def stopWorker(self):
 		self.running = False
-		data = b"AA00FF"
-		self.socket.write(data)
 
 
 class ThreadedServer(QTcpServer):
@@ -56,9 +60,11 @@ class ThreadedServer(QTcpServer):
 		worker.moveToThread(thread)
 		thread.finished.connect(worker.deleteLater)
 		worker.sendData.connect(self.newData)
-		thread.started.connect(worker.run)
+		self.newConnection.connect(worker.run)
 		thread.start()
 		self.serverRunning.emit("Running")# ({})".format(len(self.client_list)))
+		# Direct function calls to worker objects occur on main thread
+		# To avoid this, signal the worker slots only from queued connection
 
 	def newData(self, data, ip):
 		self.dataOut.emit(data, ip)
@@ -117,16 +123,6 @@ class MyWindow(QMainWindow):
 		self.serverState = "Stopped"
 		self.stateChanged.emit(self.serverState)
 		self.server.closeServer()
-
-	"""
-	def handleClient(self):
-		for thread in self.server.client_list:
-			if worker.guiDisplay == False:
-				self.server.dataOut.connect(self.calculateNextCommand)
-				worker.guiDisplay = True
-			else:  # if already running, do nothing
-				pass
-	"""
 
 	def calculateNextCommand(self, data, address):
 		output = data.hex()
