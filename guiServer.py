@@ -2,9 +2,10 @@ import sys
 import socket
 import threading
 from enum import Enum
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QLabel
 from PyQt5.QtNetwork import QTcpServer, QTcpSocket, QAbstractSocket, QHostAddress
 from PyQt5.QtCore import QObject, QThread, QReadWriteLock, QDataStream, pyqtSignal
+from PyQt5.QtGui import QPixmap
 from ui_mainwindow import Ui_MainWindow
 
 
@@ -60,7 +61,7 @@ class ThreadedServer(QTcpServer):
 		worker.moveToThread(thread)
 		thread.finished.connect(worker.deleteLater)
 		worker.sendData.connect(self.newData)
-		self.newConnection.connect(worker.run)
+		thread.started.connect(worker.run)
 		thread.start()
 		self.serverRunning.emit("Running")# ({})".format(len(self.client_list)))
 		# Direct function calls to worker objects occur on main thread
@@ -90,6 +91,7 @@ class MyWindow(QMainWindow):
 		self.heading = ""
 		self.previous = ""
 		self.rover = ""
+		self.irImage = QPixmap()
 
 		super().__init__(parent)
 		self.serverState = "Init"
@@ -140,12 +142,31 @@ class MyWindow(QMainWindow):
 
 		if source == 0:  # sensors
 			self.front, self.left, self.right, self.irState, self.lfState = values[:2], values[2:4], values[4:6], values[6:8], values[8:10]
+			self.drawImage()
 			self.displaySensorValues(self.rover)
 		elif source == 1:  # encoder
 			self.x, self.y, self.heading, self.previous, dontcare = values[:2], values[2:4], values[4:6], values[6:8], values[8:10]
 			self.displayEncoderValues(self.rover)
 
 		# check footer
+
+	def drawImage(self):
+		if self.irState == "00":
+			self.irImage.load("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate0.png")
+		elif self.irState == "01":
+			self.irImage.load("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate1.png")
+		elif self.irState == "02":
+			self.irImage.load("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate2.png")
+		elif self.irState == "03":
+			self.irImage.load("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate3.png")
+		elif self.irState == "04":
+			self.irImage.load("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate4.png")
+		elif self.irState == "05":
+			self.irImage.load("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate5.png")
+		elif self.irState == "06":
+			self.irImage.load("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate6.png")
+		elif self.irState == "07":
+			self.irImage.load("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate7.png")
 
 
 	def displaySensorValues(self, rover):
@@ -155,6 +176,7 @@ class MyWindow(QMainWindow):
 			self.ui.leftValue.setText(self.left)
 			self.ui.rightValue.setText(self.right)
 			self.ui.lineValue.setText(self.lfState)
+			self.ui.irStatusImage.setPixmap(self.irImage)
 		elif rover == "ghost1":
 			self.ui.ipValue_2.setText(self.ip)
 			self.ui.forwardValue_2.setText(self.front)

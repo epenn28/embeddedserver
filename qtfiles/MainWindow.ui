@@ -20,7 +20,7 @@
       <x>140</x>
       <y>10</y>
       <width>311</width>
-      <height>331</height>
+      <height>421</height>
      </rect>
     </property>
     <property name="currentIndex">
@@ -168,6 +168,35 @@
        </item>
       </layout>
      </widget>
+     <widget class="QLabel" name="irStatusLabel">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>320</y>
+        <width>51</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>IR status:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="irStatusImage">
+      <property name="geometry">
+       <rect>
+        <x>120</x>
+        <y>300</y>
+        <width>81</width>
+        <height>81</height>
+       </rect>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::Box</enum>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="ghost1Tab">
      <attribute name="title">
@@ -311,6 +340,35 @@
        </item>
       </layout>
      </widget>
+     <widget class="QLabel" name="irStatusLabel_2">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>320</y>
+        <width>51</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>IR status:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="irStatusImage_2">
+      <property name="geometry">
+       <rect>
+        <x>120</x>
+        <y>300</y>
+        <width>81</width>
+        <height>81</height>
+       </rect>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::Box</enum>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
     </widget>
     <widget class="QWidget" name="ghost2Tab">
      <attribute name="title">
@@ -453,6 +511,35 @@
         </widget>
        </item>
       </layout>
+     </widget>
+     <widget class="QLabel" name="irStatusLabel_3">
+      <property name="geometry">
+       <rect>
+        <x>20</x>
+        <y>320</y>
+        <width>51</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>IR status:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="irStatusImage_3">
+      <property name="geometry">
+       <rect>
+        <x>120</x>
+        <y>300</y>
+        <width>81</width>
+        <height>81</height>
+       </rect>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::Box</enum>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
      </widget>
     </widget>
    </widget>
