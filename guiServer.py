@@ -8,7 +8,7 @@ from PyQt5.QtCore import QObject, QThread, QReadWriteLock, QDataStream, pyqtSign
 from PyQt5.QtGui import QPixmap
 from ui_mainwindow import Ui_MainWindow
 
-LOCALTESTING = False
+LOCALTESTING = True
 
 
 class Worker(QObject):
@@ -41,7 +41,7 @@ class Worker(QObject):
 				self.sendData.emit(data, address)
 
 	def send(self): # connect this slot to a signal in the main thread
-		data = b"AA00FF"
+		data = b"FF00AA"
 		self.socket.write(data)
 
 	def stopWorker(self):
@@ -51,6 +51,7 @@ class Worker(QObject):
 class ThreadedServer(QTcpServer):
 	dataOut = pyqtSignal(bytes, str)
 	serverRunning = pyqtSignal(str)
+	testSend = pyqtSignal()
 
 	def __init__(self, parent = None):
 		super().__init__(parent)
@@ -65,6 +66,7 @@ class ThreadedServer(QTcpServer):
 		worker.sendData.connect(self.newData)
 		thread.started.connect(worker.run)
 		thread.start()
+		self.testSend.connect(worker.send)
 		self.serverRunning.emit("Running")# ({})".format(len(self.client_list)))
 		# Direct function calls to worker objects occur on main thread
 		# To avoid this, signal the worker slots only from queued connection
@@ -74,6 +76,7 @@ class ThreadedServer(QTcpServer):
 
 	def closeServer(self):
 		for (thread, worker) in self.client_list:
+			self.testSend.emit()
 			worker.stopWorker()
 		self.close()
 

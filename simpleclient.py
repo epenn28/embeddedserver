@@ -47,6 +47,8 @@ def main(argv):
             message = "0F00200505{}00F0".format(value)
             message = binascii.unhexlify(message)
             sock.send(message)
+            data = sock.recv(6)
+            print("Data received:", data)
 
     else:
         message = ""
