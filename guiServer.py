@@ -8,6 +8,8 @@ from PyQt5.QtCore import QObject, QThread, QReadWriteLock, QDataStream, pyqtSign
 from PyQt5.QtGui import QPixmap
 from ui_mainwindow import Ui_MainWindow
 
+LOCALTESTING = False
+
 
 class Worker(QObject):
 
@@ -35,10 +37,10 @@ class Worker(QObject):
 			if self.socket.bytesAvailable() >= 8:
 				data = stream.readRawData(8)
 				outputData = b"AA00FF" # outputting data like this works- handle algorithm at this point?
-				self.socket.write(outputData)
+				stream.writeRawData(outputData)
 				self.sendData.emit(data, address)
 
-	def send(self): # must be called from worker object's thread, not within worker itself
+	def send(self): # connect this slot to a signal in the main thread
 		data = b"AA00FF"
 		self.socket.write(data)
 
@@ -91,7 +93,18 @@ class MyWindow(QMainWindow):
 		self.heading = ""
 		self.previous = ""
 		self.rover = ""
-		self.irImage = QPixmap()
+		self.irImage0 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstateinit.png")
+		self.irImage1 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate1.png")
+		self.irImage2 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate2.png")
+		self.irImage3 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate3.png")
+		self.irImage4 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate4.png")
+		self.irImage5 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate5.png")
+		self.irImage6 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate6.png")
+		self.irImage7 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate7.png")
+		self.irImage8 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate8.png")
+		self.pixmap = QPixmap()
+		self.listOfAddresses = []
+		self.whichRover = 0
 
 		super().__init__(parent)
 		self.serverState = "Init"
@@ -132,23 +145,58 @@ class MyWindow(QMainWindow):
 		self.server.closeServer()
 
 	def calculateNextCommand(self, data, address):
+		global LOCALTESTING
+		# data = b'\x0f\x12\x14\x05\x04'
 		output = data.hex()
+		# output = 0F002005050000F0 as a string from localhost
+		# output = aa000f12140504ff as a string from rover
 		header, source, values, footer = output[:2], int(output[2:4], 16), output[4:14], output[14:]
+		# values = 2005050000 as a string from localhost
+		# values = 0f12140504 as a string from rover
+		# should = 1518200504
 
-		if "100" in address:
-			self.rover = "pacman"
-		elif "104" in address:
-			self.rover = "ghost1"
-		elif "105" in address:
-			self.rover = "ghost2"
+		if LOCALTESTING:
+			if address in self.listOfAddresses:
+				self.whichRover = self.listOfAddresses.index(address)
+			else:
+				self.listOfAddresses.append(address)
+
+			if self.whichRover == 0:
+				self.rover = "pacman"
+			elif self.whichRover == 1:
+				self.rover = "ghost1"
+			elif self.whichRover == 2:
+				self.rover = "ghost2"
+			else:
+				self.rover = "pacman"
+
+		else:
+			newVal = str(int(values[:2], 16)).rjust(2, '0')
+			newVal2 = str(int(values[2:4], 16)).rjust(2, '0')
+			newVal3 = str(int(values[4:6], 16)).rjust(2, '0')
+			newVal4 = str(int(values[6:8], 16)).rjust(2, '0')
+			newVal5 = str(int(values[8:10], 16)).rjust(2, '0')
+
+			values = ''.join((newVal, newVal2, newVal3, newVal4, newVal5))
+
+			if "103" in address:
+				self.rover = "pacman"
+			elif "104" in address:
+				self.rover = "ghost1"
+			elif "105" in address:
+				self.rover = "ghost2"
+			else:
+				self.rover = "pacman"
+
 		self.ip = address
 
 		# check header
 
 		if source == 0:  # sensors
 			self.front, self.left, self.right, self.irState, self.lfState = values[:2], values[2:4], values[4:6], values[6:8], values[8:10]
+			self.convertLFState()
 			self.drawImage()
-			self.displaySensorValues(self.rover)
+			self.displaySensorValues(self.rover, self.pixmap)
 		elif source == 1:  # encoder
 			self.x, self.y, self.heading, self.previous, dontcare = values[:2], values[2:4], values[4:6], values[6:8], values[8:10]
 			self.displayEncoderValues(self.rover)
@@ -157,45 +205,59 @@ class MyWindow(QMainWindow):
 
 	def drawImage(self):
 		if self.irState == "00":
-			self.irImage.load("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate0.png")
+			self.pixmap = self.irImage0
 		elif self.irState == "01":
-			self.irImage.load("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate1.png")
+			self.pixmap = self.irImage1
 		elif self.irState == "02":
-			self.irImage.load("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate2.png")
+			self.pixmap = self.irImage2
 		elif self.irState == "03":
-			self.irImage.load("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate3.png")
+			self.pixmap = self.irImage3
 		elif self.irState == "04":
-			self.irImage.load("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate4.png")
+			self.pixmap = self.irImage4
 		elif self.irState == "05":
-			self.irImage.load("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate5.png")
+			self.pixmap = self.irImage5
 		elif self.irState == "06":
-			self.irImage.load("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate6.png")
+			self.pixmap = self.irImage6
 		elif self.irState == "07":
-			self.irImage.load("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate7.png")
+			self.pixmap = self.irImage7
+		elif self.irState == "08":
+			self.pixmap = self.irImage8
+
+	def convertLFState(self):
+		if self.lfState == "00":
+			self.lfState = "ON PATH"
+		elif self.lfState == "01":
+			self.lfState = "SKEWED LEFT"
+		elif self.lfState == "02":
+			self.lfState = "SKEWED RIGHT"
+		elif self.lfState == "03":
+			self.lfState = "OFF PATH"
+		elif self.lfState == "04":
+			self.lfState = "INTERSECTION"
 
 
-	def displaySensorValues(self, rover):
+	def displaySensorValues(self, rover, pixmap):
 		if rover == "pacman":
 			self.ui.ipValue.setText(self.ip)
 			self.ui.forwardValue.setText(self.front)
 			self.ui.leftValue.setText(self.left)
 			self.ui.rightValue.setText(self.right)
 			self.ui.lineValue.setText(self.lfState)
-			self.ui.irStatusImage.setPixmap(self.irImage)
+			self.ui.irStatusImage.setPixmap(self.pixmap)
 		elif rover == "ghost1":
 			self.ui.ipValue_2.setText(self.ip)
 			self.ui.forwardValue_2.setText(self.front)
 			self.ui.leftValue_2.setText(self.left)
 			self.ui.rightValue_2.setText(self.right)
 			self.ui.lineValue_2.setText(self.lfState)
-			self.ui.irStatusImage_2.setPixmap(self.irImage)
+			self.ui.irStatusImage_2.setPixmap(self.pixmap)
 		elif rover == "ghost2":
 			self.ui.ipValue_3.setText(self.ip)
 			self.ui.forwardValue_3.setText(self.front)
 			self.ui.leftValue_3.setText(self.left)
 			self.ui.rightValue_3.setText(self.right)
 			self.ui.lineValue_3.setText(self.lfState)
-			self.ui.irStatusImage_3.setPixmap(self.irImage)
+			self.ui.irStatusImage_3.setPixmap(self.pixmap)
 
 	def displayEncoderValues(self, rover):
 		if rover == "pacman":
