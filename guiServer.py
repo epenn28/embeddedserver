@@ -98,6 +98,7 @@ class MyWindow(QMainWindow):
 		self.stateChanged.emit(self.serverState)
 		self.ui = Ui_MainWindow()
 		self.ui.setupUi(self)
+		self.ui.stopButton.setEnabled(False)
 
 		# Set up server
 		self.server = ThreadedServer(self)
@@ -114,6 +115,8 @@ class MyWindow(QMainWindow):
 		self.stateChanged.emit(self.serverState)
 
 	def startServer(self):
+		self.ui.stopButton.setEnabled(True)
+		self.ui.startButton.setEnabled(False)
 		self.serverState = "Started"
 		self.stateChanged.emit(self.serverState)
 		if not self.server.listen(QHostAddress("0.0.0.0"), port_num):
@@ -122,6 +125,8 @@ class MyWindow(QMainWindow):
 			return
 
 	def stopServer(self):
+		self.ui.stopButton.setEnabled(False)
+		self.ui.startButton.setEnabled(True)
 		self.serverState = "Stopped"
 		self.stateChanged.emit(self.serverState)
 		self.server.closeServer()
@@ -183,12 +188,14 @@ class MyWindow(QMainWindow):
 			self.ui.leftValue_2.setText(self.left)
 			self.ui.rightValue_2.setText(self.right)
 			self.ui.lineValue_2.setText(self.lfState)
+			self.ui.irStatusImage_2.setPixmap(self.irImage)
 		elif rover == "ghost2":
 			self.ui.ipValue_3.setText(self.ip)
 			self.ui.forwardValue_3.setText(self.front)
 			self.ui.leftValue_3.setText(self.left)
 			self.ui.rightValue_3.setText(self.right)
 			self.ui.lineValue_3.setText(self.lfState)
+			self.ui.irStatusImage_3.setPixmap(self.irImage)
 
 	def displayEncoderValues(self, rover):
 		if rover == "pacman":
