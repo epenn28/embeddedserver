@@ -30,6 +30,7 @@ def encoderPacket():
 def main(argv):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    sock.settimeout(.01)
 
     address = ('192.168.1.100', 2000)
 
@@ -41,14 +42,24 @@ def main(argv):
             value = input("Enter IR state: ")
             if value == "q":
                 print("Shutting down")
+                try:
+                    data = sock.recv(6)
+                    print("Data received:", data)
+                except socket.timeout:
+                    print("No data received, shutting down")
+                    pass
                 sock.shutdown(socket.SHUT_RDWR)
                 sock.close()
                 break
             message = "0F00200505{}00F0".format(value)
             message = binascii.unhexlify(message)
             sock.send(message)
-            data = sock.recv(6)
-            print("Data received:", data)
+            try:
+                data = sock.recv(6)
+                print("Data received:", data)
+            except socket.timeout:
+                print("No data received")
+                pass
 
     else:
         message = ""
@@ -60,14 +71,28 @@ def main(argv):
                 else:
                     message = encoderPacket()
 
-                sock.send(message)
+                try:
+                    sock.send(message)
+                    data = sock.recv(6)
+                except socket.timeout:
+                    print("Data received:", data)
+                    break
+                except ConnectionAbortedError:
+                    print("Data received:", data)
+                    break
 
                 time.sleep(0.02)
 
         finally:
             print("Closing socket")
-            data = sock.recv(6)
-            print("Data received:", data)
+            try:
+                data = sock.recv(6)
+                print("Data received:", data)
+            except socket.timeout:
+                print("No data received")
+                pass
+            except ConnectionAbortedError:
+                pass
             sock.shutdown(socket.SHUT_RDWR)
             sock.close()
             print("Socket closed")

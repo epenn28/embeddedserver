@@ -1,6 +1,7 @@
 import sys
 import socket
 import threading
+import binascii
 from enum import Enum
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QLabel
 from PyQt5.QtNetwork import QTcpServer, QTcpSocket, QAbstractSocket, QHostAddress
@@ -8,7 +9,28 @@ from PyQt5.QtCore import QObject, QThread, QReadWriteLock, QDataStream, pyqtSign
 from PyQt5.QtGui import QPixmap
 from ui_mainwindow import Ui_MainWindow
 
-LOCALTESTING = True
+LOCALTESTING = False
+
+class Command(Enum):
+	FORWARD = 0
+	STOP_LEFT_FORWARD = 1
+	STOP_RIGHT_FORWARD = 2
+	ADJUST_LEFT = 3
+	ADJUST_RIGHT = 4
+	READJUST_LEFT = 5
+	READJUST_RIGHT = 6
+	STOP = 7
+
+class Values:
+	front = None
+	left = None
+	right = None
+	irState = None
+	lfState = None
+	xPos = None
+	yPos = None
+	heading = None
+	prevState = None
 
 
 class Worker(QObject):
@@ -20,6 +42,7 @@ class Worker(QObject):
 		self.socketId = socketId
 		self.running = True
 		self.socket = QTcpSocket(self)
+		self.socket.setReadBufferSize(8)
 
 	def run(self):
 		if not self.socket.setSocketDescriptor(self.socketId):  # initializes socket, puts into connected state
@@ -29,20 +52,23 @@ class Worker(QObject):
 		self.socket.disconnected.connect(self.stopWorker)
 
 	def read(self):
-		if self.running:
+		if self.running and self.socket.state() == QAbstractSocket.ConnectedState:
 			address = QHostAddress(self.socket.peerAddress()).toString() + ":" + str(self.socket.peerPort())
 			data = bytes(8)
 			stream = QDataStream(self.socket)
 			stream.setVersion(QDataStream.Qt_5_9)
 			if self.socket.bytesAvailable() >= 8:
 				data = stream.readRawData(8)
-				outputData = b"AA00FF" # outputting data like this works- handle algorithm at this point?
-				stream.writeRawData(outputData)
 				self.sendData.emit(data, address)
 
-	def send(self): # connect this slot to a signal in the main thread
-		data = b"FF00AA"
+	def send(self, command): # connect this slot to a signal in the main thread
+		header = b"AA"
+		footer = b"FF"
+		value = str(command.value).rjust(2, '0').encode()
+		data = binascii.unhexlify(header + value + footer)
 		self.socket.write(data)
+		#if command == Command.STOP:
+		#	self.socket.readyRead.disconnect()
 
 	def stopWorker(self):
 		self.running = False
@@ -51,7 +77,7 @@ class Worker(QObject):
 class ThreadedServer(QTcpServer):
 	dataOut = pyqtSignal(bytes, str)
 	serverRunning = pyqtSignal(str)
-	testSend = pyqtSignal()
+	testSend = pyqtSignal(Command)
 
 	def __init__(self, parent = None):
 		super().__init__(parent)
@@ -67,22 +93,24 @@ class ThreadedServer(QTcpServer):
 		thread.started.connect(worker.run)
 		thread.start()
 		self.testSend.connect(worker.send)
-		self.serverRunning.emit("Running")# ({})".format(len(self.client_list)))
-		# Direct function calls to worker objects occur on main thread
-		# To avoid this, signal the worker slots only from queued connection
+		self.serverRunning.emit("Running")
 
 	def newData(self, data, ip):
 		self.dataOut.emit(data, ip)
 
 	def closeServer(self):
 		for (thread, worker) in self.client_list:
-			self.testSend.emit()
+			self.testSend.emit(Command.STOP)
 			worker.stopWorker()
 		self.close()
 
+	def passCommand(self, command):
+		for (thread, worker) in self.client_list:
+			self.testSend.emit(command)
 
 class MyWindow(QMainWindow):
 	stateChanged = pyqtSignal(str)
+	sendCommand = pyqtSignal(Command)
 
 	def __init__(self, parent = None):
 		self.ip = ""
@@ -108,6 +136,9 @@ class MyWindow(QMainWindow):
 		self.pixmap = QPixmap()
 		self.listOfAddresses = []
 		self.whichRover = 0
+		self.pacman = Values()
+		self.ghost1 = Values()
+		self.ghost2 = Values()
 
 		super().__init__(parent)
 		self.serverState = "Init"
@@ -126,6 +157,7 @@ class MyWindow(QMainWindow):
 
 		self.server.dataOut.connect(self.calculateNextCommand)
 		self.server.serverRunning.connect(self.ui.statusValue.setText)
+		self.sendCommand.connect(self.server.passCommand)
 
 		self.serverState = "Stopped"
 		self.stateChanged.emit(self.serverState)
@@ -149,14 +181,8 @@ class MyWindow(QMainWindow):
 
 	def calculateNextCommand(self, data, address):
 		global LOCALTESTING
-		# data = b'\x0f\x12\x14\x05\x04'
 		output = data.hex()
-		# output = 0F002005050000F0 as a string from localhost
-		# output = aa000f12140504ff as a string from rover
 		header, source, values, footer = output[:2], int(output[2:4], 16), output[4:14], output[14:]
-		# values = 2005050000 as a string from localhost
-		# values = 0f12140504 as a string from rover
-		# should = 1518200504
 
 		if LOCALTESTING:
 			if address in self.listOfAddresses:
@@ -197,14 +223,42 @@ class MyWindow(QMainWindow):
 
 		if source == 0:  # sensors
 			self.front, self.left, self.right, self.irState, self.lfState = values[:2], values[2:4], values[4:6], values[6:8], values[8:10]
+			self.updateValues()
+			self.newCommand()
 			self.convertLFState()
 			self.drawImage()
 			self.displaySensorValues(self.rover, self.pixmap)
 		elif source == 1:  # encoder
 			self.x, self.y, self.heading, self.previous, dontcare = values[:2], values[2:4], values[4:6], values[6:8], values[8:10]
+			self.updateValues()
+			self.newCommand()
 			self.displayEncoderValues(self.rover)
 
 		# check footer
+
+	def updateValues(self):
+		if self.rover == "pacman":
+			self.pacman.irState = self.irState
+			self.pacman.prevState = self.previous
+		elif self.rover == "ghost1":
+			self.ghost1.irState = self.irState
+			self.ghost1.prevState = self.previous
+		elif self.rover == "ghost2":
+			self.ghost2.irState = self.irState
+			self.ghost2.prevState = self.previous
+
+	def newCommand(self):
+		if self.rover == "pacman":
+			self.sendCommand.emit(Command.FORWARD)
+			"""
+			if self.pacman.irState == 7:
+				if self.pacman.prevState == 0 or self.pacman.prevState == 1:
+				self.sendCommand.emit(Command.FORWARD)
+			elif self.pacman.irState == 5:
+				self.sendCommand.emit(Command.STOP)
+			self.pacman.prevState = self.pacman.irState
+			"""
+
 
 	def drawImage(self):
 		if self.irState == "00":
