@@ -5,7 +5,7 @@ import binascii
 from enum import Enum
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QLabel
 from PyQt5.QtNetwork import QTcpServer, QTcpSocket, QAbstractSocket, QHostAddress
-from PyQt5.QtCore import QObject, QThread, QReadWriteLock, QDataStream, pyqtSignal
+from PyQt5.QtCore import QObject, QThread, QReadWriteLock, QDataStream, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QPixmap
 from ui_mainwindow import Ui_MainWindow
 
@@ -17,9 +17,7 @@ class Command(Enum):
 	STOP_RIGHT_FORWARD = 2
 	ADJUST_LEFT = 3
 	ADJUST_RIGHT = 4
-	READJUST_LEFT = 5
-	READJUST_RIGHT = 6
-	STOP = 7
+	STOP = 5
 
 class Values:
 	front = None
@@ -56,19 +54,20 @@ class Worker(QObject):
 			address = QHostAddress(self.socket.peerAddress()).toString() + ":" + str(self.socket.peerPort())
 			data = bytes(8)
 			stream = QDataStream(self.socket)
-			stream.setVersion(QDataStream.Qt_5_9)
+			stream.setVersion(QDataStream.Qt_5_3)
 			if self.socket.bytesAvailable() >= 8:
 				data = stream.readRawData(8)
 				self.sendData.emit(data, address)
 
+	@pyqtSlot(Command)
 	def send(self, command): # connect this slot to a signal in the main thread
 		header = b"AA"
 		footer = b"FF"
 		value = str(command.value).rjust(2, '0').encode()
 		data = binascii.unhexlify(header + value + footer)
 		self.socket.write(data)
-		#if command == Command.STOP:
-		#	self.socket.readyRead.disconnect()
+		if command == Command.STOP:
+			self.socket.disconnectFromHost()
 
 	def stopWorker(self):
 		self.running = False
@@ -124,15 +123,15 @@ class MyWindow(QMainWindow):
 		self.heading = ""
 		self.previous = ""
 		self.rover = ""
-		self.irImage0 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstateinit.png")
-		self.irImage1 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate1.png")
-		self.irImage2 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate2.png")
-		self.irImage3 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate3.png")
-		self.irImage4 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate4.png")
-		self.irImage5 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate5.png")
-		self.irImage6 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate6.png")
-		self.irImage7 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate7.png")
-		self.irImage8 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate8.png")
+		self.irImage0 = QPixmap("/home/pi/Desktop/embeddedserver-master/qtfiles/Images/irstateinit.png")
+		self.irImage1 = QPixmap("/home/pi/Desktop/embeddedserver-master/qtfiles/Images/irstate1.png")
+		self.irImage2 = QPixmap("/home/pi/Desktop/embeddedserver-master/qtfiles/Images/irstate2.png")
+		self.irImage3 = QPixmap("/home/pi/Desktop/embeddedserver-master/qtfiles/Images/irstate3.png")
+		self.irImage4 = QPixmap("/home/pi/Desktop/embeddedserver-master/qtfiles/Images/irstate4.png")
+		self.irImage5 = QPixmap("/home/pi/Desktop/embeddedserver-master/qtfiles/Images/irstate5.png")
+		self.irImage6 = QPixmap("/home/pi/Desktop/embeddedserver-master/qtfiles/Images/irstate6.png")
+		self.irImage7 = QPixmap("/home/pi/Desktop/embeddedserver-master/qtfiles/Images/irstate7.png")
+		self.irImage8 = QPixmap("/home/pi/Desktop/embeddedserver-master/qtfiles/Images/irstate8.png")
 		self.pixmap = QPixmap()
 		self.listOfAddresses = []
 		self.whichRover = 0
@@ -181,7 +180,7 @@ class MyWindow(QMainWindow):
 
 	def calculateNextCommand(self, data, address):
 		global LOCALTESTING
-		output = data.hex()
+		output = binascii.hexlify(data)
 		header, source, values, footer = output[:2], int(output[2:4], 16), output[4:14], output[14:]
 
 		if LOCALTESTING:
@@ -249,15 +248,20 @@ class MyWindow(QMainWindow):
 
 	def newCommand(self):
 		if self.rover == "pacman":
-			self.sendCommand.emit(Command.FORWARD)
-			"""
 			if self.pacman.irState == 7:
 				if self.pacman.prevState == 0 or self.pacman.prevState == 1:
-				self.sendCommand.emit(Command.FORWARD)
+					self.sendCommand.emit(Command.FORWARD)
 			elif self.pacman.irState == 5:
 				self.sendCommand.emit(Command.STOP)
 			self.pacman.prevState = self.pacman.irState
-			"""
+
+		if self.rover == "ghost1":
+			if self.ghost1.irState == 7:
+				if self.ghost1.prevState == 0 or self.ghost1.prevState == 1:
+					self.sendCommand.emit(Command.FORWARD)
+			elif self.ghost1.irState == 5:
+				self.sendCommand.emit(Command.STOP)
+			self.ghost1.prevState = self.ghost1.irState
 
 
 	def drawImage(self):
