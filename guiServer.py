@@ -3,6 +3,7 @@ import socket
 import threading
 import binascii
 from enum import Enum
+from random import *
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QLabel
 from PyQt5.QtNetwork import QTcpServer, QTcpSocket, QAbstractSocket, QHostAddress
 from PyQt5.QtCore import QObject, QThread, QReadWriteLock, QDataStream, pyqtSignal, pyqtSlot
@@ -92,6 +93,7 @@ class ThreadedServer(QTcpServer):
 		thread.started.connect(worker.run)
 		thread.start()
 		self.testSend.connect(worker.send)
+		self.testSend.emit(Command.FORWARD)
 		self.serverRunning.emit("Running")
 
 	def newData(self, data, ip):
@@ -227,33 +229,60 @@ class MyWindow(QMainWindow):
 			self.convertLFState()
 			self.drawImage()
 			self.displaySensorValues(self.rover, self.pixmap)
-		elif source == 1:  # encoder
-			self.x, self.y, self.heading, self.previous, dontcare = values[:2], values[2:4], values[4:6], values[6:8], values[8:10]
-			self.updateValues()
-			self.newCommand()
-			self.displayEncoderValues(self.rover)
+		#elif source == 1:  # encoder
+			#self.x, self.y, self.heading, self.previous, dontcare = values[:2], values[2:4], values[4:6], values[6:8], values[8:10]
+			#self.updateValues()
+			#self.newCommand()
+			#self.displayEncoderValues(self.rover)
 
 		# check footer
 
 	def updateValues(self):
 		if self.rover == "pacman":
 			self.pacman.irState = self.irState
-			self.pacman.prevState = self.previous
+			#self.pacman.prevState = self.previous
 		elif self.rover == "ghost1":
 			self.ghost1.irState = self.irState
-			self.ghost1.prevState = self.previous
+			#self.ghost1.prevState = self.previous
 		elif self.rover == "ghost2":
 			self.ghost2.irState = self.irState
-			self.ghost2.prevState = self.previous
+			#self.ghost2.prevState = self.previous
 
 	def newCommand(self):
 		if self.rover == "pacman":
-			if self.pacman.irState == 7:
-				if self.pacman.prevState == 0 or self.pacman.prevState == 1:
-					self.sendCommand.emit(Command.FORWARD)
-			elif self.pacman.irState == 5:
-				self.sendCommand.emit(Command.STOP)
-			self.pacman.prevState = self.pacman.irState
+                        if self.pacman.irState == "01":
+                                pass
+                        if self.pacman.irState == "02":
+                                commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
+                                if self.pacman.prevState == "01" or self.pacman.prevState == "00":
+                                        x = randint(0, 2)
+                                        choice = commands[x]
+                                        self.sendCommand.emit(choice)
+                        if self.pacman.irState == "03":
+                                commands = [Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
+                                if self.pacman.prevState == "01" or self.pacman.prevState == "00":
+                                        x = randint(0, 1)
+                                        choice = commands[x]
+                                        self.sendCommand.emit(choice)
+                        if self.pacman.irState == "04":
+                                if self.pacman.prevState == "01" or self.pacman.prevState == "00":
+                                        self.sendCommand.emit(Command.STOP_LEFT_FORWARD)
+                        if self.pacman.irState == "05":
+                                if self.pacman.prevState == "01" or self.pacman.prevState == "00":
+                                        self.sendCommand.emit(Command.STOP_RIGHT_FORWARD)
+                        if self.pacman.irState == "06":
+                                commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD]
+                                if self.pacman.prevState == "01" or self.pacman.prevState == "00":
+                                        x = randint(0, 1)
+                                        choice = commands[x]
+                                        self.sendCommand.emit(choice)
+                        if self.pacman.irState == "07":
+                                commands = [Command.FORWARD, Command.STOP_RIGHT_FORWARD]
+                                if self.pacman.prevState == "01" or self.pacman.prevState == "00":
+                                        x = randint(0, 1)
+                                        choice = commands[x]
+                                        self.sendCommand.emit(choice)
+                        self.pacman.prevState = self.pacman.irState
 
 		if self.rover == "ghost1":
 			if self.ghost1.irState == 7:
