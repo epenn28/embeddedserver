@@ -17,9 +17,7 @@ class Command(Enum):
 	STOP_RIGHT_FORWARD = 2
 	ADJUST_LEFT = 3
 	ADJUST_RIGHT = 4
-	READJUST_LEFT = 5
-	READJUST_RIGHT = 6
-	STOP = 7
+	STOP = 5
 
 class Values:
 	front = None
@@ -67,8 +65,8 @@ class Worker(QObject):
 		value = str(command.value).rjust(2, '0').encode()
 		data = binascii.unhexlify(header + value + footer)
 		self.socket.write(data)
-		#if command == Command.STOP:
-		#	self.socket.readyRead.disconnect()
+		if command == Command.STOP:
+			self.socket.readyRead.disconnect()
 
 	def stopWorker(self):
 		self.running = False
@@ -249,15 +247,15 @@ class MyWindow(QMainWindow):
 
 	def newCommand(self):
 		if self.rover == "pacman":
-			self.sendCommand.emit(Command.FORWARD)
-			"""
+			#self.sendCommand.emit(Command.FORWARD)
+
 			if self.pacman.irState == 7:
 				if self.pacman.prevState == 0 or self.pacman.prevState == 1:
-				self.sendCommand.emit(Command.FORWARD)
+					self.sendCommand.emit(Command.FORWARD)
 			elif self.pacman.irState == 5:
 				self.sendCommand.emit(Command.STOP)
 			self.pacman.prevState = self.pacman.irState
-			"""
+
 
 
 	def drawImage(self):
