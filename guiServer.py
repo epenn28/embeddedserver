@@ -237,7 +237,7 @@ class MyWindow(QMainWindow):
 			self.updateValues()
 			self.newCommand()
 			self.drawImage()
-			self.displaySensorValues(self.rover, self.pixmap)
+			self.displaySensorValues(self.rover)
 		#elif source == 1:  # encoder
 			#self.x, self.y, self.heading, self.previous, dontcare = values[:2], values[2:4], values[4:6], values[6:8], values[8:10]
 			#self.updateValues()
