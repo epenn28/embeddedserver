@@ -51,7 +51,8 @@ class Worker(QObject):
 
 	def read(self):
 		if self.running and self.socket.state() == QAbstractSocket.ConnectedState:
-			address = QHostAddress(self.socket.peerAddress()).toString() + ":" + str(self.socket.peerPort())
+			address = QHostAddress(self.socket.peerAddress()).toString()
+			self.setObjectName(address)
 			data = bytes(8)
 			stream = QDataStream(self.socket)
 			stream.setVersion(QDataStream.Qt_5_9)
@@ -102,13 +103,16 @@ class ThreadedServer(QTcpServer):
 			worker.stopWorker()
 		self.close()
 
-	def passCommand(self, command):
+	def passCommand(self, command, name):
 		for (thread, worker) in self.client_list:
-			self.testSend.emit(command)
+			if worker.objectName() == name:
+				self.testSend.emit(command)
+			else:
+				pass
 
 class MyWindow(QMainWindow):
 	stateChanged = pyqtSignal(str)
-	sendCommand = pyqtSignal(Command)
+	sendCommand = pyqtSignal(Command, str)
 
 	def __init__(self, parent = None):
 		self.ip = ""
@@ -131,7 +135,13 @@ class MyWindow(QMainWindow):
 		self.irImage6 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate6.png")
 		self.irImage7 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate7.png")
 		self.irImage8 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/irstate8.png")
-		self.pixmap = QPixmap()
+		self.lfImage0 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/lfstate0.png")
+		self.lfImage1 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/lfstate1.png")
+		self.lfImage2 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/lfstate2.png")
+		self.lfImage3 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/lfstate3.png")
+		self.lfimage4 = QPixmap("C:/Users/Elliot/Documents/Embedded/embeddedserver/qtfiles/images/lfstate4.png")
+		self.irPixmap = QPixmap()
+		self.lfPixmap = QPixmap()
 		self.listOfAddresses = []
 		self.whichRover = 0
 		self.pacman = Values()
@@ -223,9 +233,8 @@ class MyWindow(QMainWindow):
 			self.front, self.left, self.right, self.irState, self.lfState = values[:2], values[2:4], values[4:6], values[6:8], values[8:10]
 			self.updateValues()
 			self.newCommand()
-			self.convertLFState()
 			self.drawImage()
-			self.displaySensorValues(self.rover, self.pixmap)
+			self.displaySensorValues(self.rover, self.irPixmap)
 		elif source == 1:  # encoder
 			self.x, self.y, self.heading, self.previous, dontcare = values[:2], values[2:4], values[4:6], values[6:8], values[8:10]
 			self.updateValues()
@@ -246,49 +255,52 @@ class MyWindow(QMainWindow):
 			self.ghost2.prevState = self.previous
 
 	def newCommand(self):
+		pacIP = "192.168.1.103"
+		ghost1IP = "192.168.1.104"
+		ghost2IP = "192.168.1.105"
+
 		if self.rover == "pacman":
 			#self.sendCommand.emit(Command.FORWARD)
 
 			if self.pacman.irState == 7:
 				if self.pacman.prevState == 0 or self.pacman.prevState == 1:
-					self.sendCommand.emit(Command.FORWARD)
+					self.sendCommand.emit(Command.FORWARD, pacIP)
 			elif self.pacman.irState == 5:
-				self.sendCommand.emit(Command.STOP)
+				self.sendCommand.emit(Command.STOP, pacIP)
 			self.pacman.prevState = self.pacman.irState
 
 
 
 	def drawImage(self):
 		if self.irState == "00":
-			self.pixmap = self.irImage0
+			self.irPixmap = self.irImage0
 		elif self.irState == "01":
-			self.pixmap = self.irImage1
+			self.irPixmap = self.irImage1
 		elif self.irState == "02":
-			self.pixmap = self.irImage2
+			self.irPixmap = self.irImage2
 		elif self.irState == "03":
-			self.pixmap = self.irImage3
+			self.irPixmap = self.irImage3
 		elif self.irState == "04":
-			self.pixmap = self.irImage4
+			self.irPixmap = self.irImage4
 		elif self.irState == "05":
-			self.pixmap = self.irImage5
+			self.irPixmap = self.irImage5
 		elif self.irState == "06":
-			self.pixmap = self.irImage6
+			self.irPixmap = self.irImage6
 		elif self.irState == "07":
-			self.pixmap = self.irImage7
+			self.irPixmap = self.irImage7
 		elif self.irState == "08":
-			self.pixmap = self.irImage8
+			self.irPixmap = self.irImage8
 
-	def convertLFState(self):
 		if self.lfState == "00":
-			self.lfState = "ON PATH"
+			self.lfPixmap = self.lfImage0
 		elif self.lfState == "01":
-			self.lfState = "SKEWED LEFT"
+			self.lfPixmap = self.lfImage1
 		elif self.lfState == "02":
-			self.lfState = "SKEWED RIGHT"
+			self.lfPixmap = self.lfImage2
 		elif self.lfState == "03":
-			self.lfState = "OFF PATH"
+			self.lfPixmap = self.lfImage3
 		elif self.lfState == "04":
-			self.lfState = "INTERSECTION"
+			self.lfPixmap = self.lfImage4
 
 
 	def displaySensorValues(self, rover, pixmap):
@@ -297,22 +309,22 @@ class MyWindow(QMainWindow):
 			self.ui.forwardValue.setText(self.front)
 			self.ui.leftValue.setText(self.left)
 			self.ui.rightValue.setText(self.right)
-			self.ui.lineValue.setText(self.lfState)
-			self.ui.irStatusImage.setPixmap(self.pixmap)
+			self.ui.irStatusImage.setPixmap(self.irPixmap)
+			self.ui.lfStatusImage.setPixmap(self.lfPixmap)
 		elif rover == "ghost1":
 			self.ui.ipValue_2.setText(self.ip)
 			self.ui.forwardValue_2.setText(self.front)
 			self.ui.leftValue_2.setText(self.left)
 			self.ui.rightValue_2.setText(self.right)
-			self.ui.lineValue_2.setText(self.lfState)
-			self.ui.irStatusImage_2.setPixmap(self.pixmap)
+			self.ui.irStatusImage_2.setPixmap(self.irPixmap)
+			self.ui.lfStatusImage_2.setPixmap(self.lfPixmap)
 		elif rover == "ghost2":
 			self.ui.ipValue_3.setText(self.ip)
 			self.ui.forwardValue_3.setText(self.front)
 			self.ui.leftValue_3.setText(self.left)
 			self.ui.rightValue_3.setText(self.right)
-			self.ui.lineValue_3.setText(self.lfState)
-			self.ui.irStatusImage_3.setPixmap(self.pixmap)
+			self.ui.irStatusImage_3.setPixmap(self.irPixmap)
+			self.ui.lfStatusImage_3.setPixmap(self.lfPixmap)
 
 	def displayEncoderValues(self, rover):
 		if rover == "pacman":
@@ -320,19 +332,19 @@ class MyWindow(QMainWindow):
 			self.ui.xValue.setText(self.x)
 			self.ui.yValue.setText(self.y)
 			self.ui.headingValue.setText(self.heading)
-			self.ui.piValue.setText(self.previous)
+			self.ui.commandValue.setText(self.previous)
 		elif rover == "ghost1":
 			self.ui.ipValue_2.setText(self.ip)
 			self.ui.xValue_2.setText(self.x)
 			self.ui.yValue_2.setText(self.y)
 			self.ui.headingValue_2.setText(self.heading)
-			self.ui.piValue_2.setText(self.previous)
+			self.ui.commandValue_2.setText(self.previous)
 		elif rover == "ghost2":
 			self.ui.ipValue_3.setText(self.ip)
 			self.ui.xValue_3.setText(self.x)
 			self.ui.yValue_3.setText(self.y)
 			self.ui.headingValue_3.setText(self.heading)
-			self.ui.piValue_3.setText(self.previous)
+			self.ui.commandValue_3.setText(self.previous)
 
 
 if __name__ == '__main__':

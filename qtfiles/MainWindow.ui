@@ -40,6 +40,13 @@
        </rect>
       </property>
       <layout class="QGridLayout" name="pacmanLayout">
+       <item row="4" column="1">
+        <widget class="QLineEdit" name="xValue">
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="0">
         <widget class="QLabel" name="ipLabel">
          <property name="text">
@@ -57,7 +64,7 @@
        <item row="1" column="0">
         <widget class="QLabel" name="forwardLabel">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Forward:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Forward IR:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -71,7 +78,7 @@
        <item row="2" column="0">
         <widget class="QLabel" name="leftLabel">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Left:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Left IR:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -85,7 +92,7 @@
        <item row="3" column="0">
         <widget class="QLabel" name="rightLabel">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Right:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Right IR:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -97,70 +104,49 @@
         </widget>
        </item>
        <item row="4" column="0">
-        <widget class="QLabel" name="lineLabel">
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Line follower:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QLineEdit" name="lineValue">
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
         <widget class="QLabel" name="xLabel">
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;X-coordinate:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="1">
-        <widget class="QLineEdit" name="xValue">
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="0">
+       <item row="5" column="0">
         <widget class="QLabel" name="yLabel">
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Y-coordinate:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
+       <item row="5" column="1">
         <widget class="QLineEdit" name="yValue">
          <property name="readOnly">
           <bool>true</bool>
          </property>
         </widget>
        </item>
-       <item row="7" column="0">
+       <item row="6" column="0">
         <widget class="QLabel" name="headingLabel">
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Heading:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
-       <item row="7" column="1">
+       <item row="6" column="1">
         <widget class="QLineEdit" name="headingValue">
          <property name="readOnly">
           <bool>true</bool>
          </property>
         </widget>
        </item>
-       <item row="8" column="0">
-        <widget class="QLabel" name="piLabel">
+       <item row="7" column="0">
+        <widget class="QLabel" name="commandLabel">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Pi command:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Current command:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
-       <item row="8" column="1">
-        <widget class="QLineEdit" name="piValue">
+       <item row="7" column="1">
+        <widget class="QLineEdit" name="commandValue">
          <property name="readOnly">
           <bool>true</bool>
          </property>
@@ -171,8 +157,8 @@
      <widget class="QLabel" name="irStatusLabel">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>320</y>
+        <x>10</x>
+        <y>330</y>
         <width>51</width>
         <height>16</height>
        </rect>
@@ -184,7 +170,36 @@
      <widget class="QLabel" name="irStatusImage">
       <property name="geometry">
        <rect>
-        <x>120</x>
+        <x>60</x>
+        <y>300</y>
+        <width>81</width>
+        <height>81</height>
+       </rect>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::Box</enum>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="lfStatusLabel">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>330</y>
+        <width>51</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>LF status:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="lfStatusImage">
+      <property name="geometry">
+       <rect>
+        <x>210</x>
         <y>300</y>
         <width>81</width>
         <height>81</height>
@@ -229,7 +244,7 @@
        <item row="1" column="0">
         <widget class="QLabel" name="forwardLabel_2">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Forward:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Forward IR:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -243,7 +258,7 @@
        <item row="2" column="0">
         <widget class="QLabel" name="leftLabel_2">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Left:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Left IR:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -257,7 +272,7 @@
        <item row="3" column="0">
         <widget class="QLabel" name="rightLabel_2">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Right:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Right IR:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -269,70 +284,56 @@
         </widget>
        </item>
        <item row="4" column="0">
-        <widget class="QLabel" name="lineLabel_2">
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Line follower:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QLineEdit" name="lineValue_2">
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
         <widget class="QLabel" name="xLabel_2">
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;X-coordinate:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="1">
+       <item row="4" column="1">
         <widget class="QLineEdit" name="xValue_2">
          <property name="readOnly">
           <bool>true</bool>
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
+       <item row="5" column="0">
         <widget class="QLabel" name="yLabel_2">
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Y-coordinate:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
+       <item row="5" column="1">
         <widget class="QLineEdit" name="yValue_2">
          <property name="readOnly">
           <bool>true</bool>
          </property>
         </widget>
        </item>
-       <item row="7" column="0">
+       <item row="6" column="0">
         <widget class="QLabel" name="headingLabel_2">
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Heading:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
-       <item row="7" column="1">
+       <item row="6" column="1">
         <widget class="QLineEdit" name="headingValue_2">
          <property name="readOnly">
           <bool>true</bool>
          </property>
         </widget>
        </item>
-       <item row="8" column="0">
-        <widget class="QLabel" name="piLabel_2">
+       <item row="7" column="0">
+        <widget class="QLabel" name="commandLabel_2">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Pi command:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Current command:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
-       <item row="8" column="1">
-        <widget class="QLineEdit" name="piValue_2">
+       <item row="7" column="1">
+        <widget class="QLineEdit" name="commandValue_2">
          <property name="readOnly">
           <bool>true</bool>
          </property>
@@ -343,8 +344,8 @@
      <widget class="QLabel" name="irStatusLabel_2">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>320</y>
+        <x>10</x>
+        <y>330</y>
         <width>51</width>
         <height>16</height>
        </rect>
@@ -356,7 +357,36 @@
      <widget class="QLabel" name="irStatusImage_2">
       <property name="geometry">
        <rect>
-        <x>120</x>
+        <x>60</x>
+        <y>300</y>
+        <width>81</width>
+        <height>81</height>
+       </rect>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::Box</enum>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="lfStatusLabel_2">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>330</y>
+        <width>51</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>LF status:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="lfStatusImage_2">
+      <property name="geometry">
+       <rect>
+        <x>210</x>
         <y>300</y>
         <width>81</width>
         <height>81</height>
@@ -401,7 +431,7 @@
        <item row="1" column="0">
         <widget class="QLabel" name="forwardLabel_3">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Forward:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Forward IR:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -415,7 +445,7 @@
        <item row="2" column="0">
         <widget class="QLabel" name="leftLabel_3">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Left:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Left IR:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -429,7 +459,7 @@
        <item row="3" column="0">
         <widget class="QLabel" name="rightLabel_3">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Right:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Right IR:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -441,70 +471,56 @@
         </widget>
        </item>
        <item row="4" column="0">
-        <widget class="QLabel" name="lineLabel_3">
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Line follower:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QLineEdit" name="lineValue_3">
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
         <widget class="QLabel" name="xLabel_3">
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;X-coordinate:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="1">
+       <item row="4" column="1">
         <widget class="QLineEdit" name="xValue_3">
          <property name="readOnly">
           <bool>true</bool>
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
+       <item row="5" column="0">
         <widget class="QLabel" name="yLabel_3">
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Y-coordinate:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
+       <item row="5" column="1">
         <widget class="QLineEdit" name="yValue_3">
          <property name="readOnly">
           <bool>true</bool>
          </property>
         </widget>
        </item>
-       <item row="7" column="0">
+       <item row="6" column="0">
         <widget class="QLabel" name="headingLabel_3">
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Heading:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
-       <item row="7" column="1">
+       <item row="6" column="1">
         <widget class="QLineEdit" name="headingValue_3">
          <property name="readOnly">
           <bool>true</bool>
          </property>
         </widget>
        </item>
-       <item row="8" column="0">
-        <widget class="QLabel" name="piLabel_3">
+       <item row="7" column="0">
+        <widget class="QLabel" name="commandLabel_3">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Pi command:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Current command:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
-       <item row="8" column="1">
-        <widget class="QLineEdit" name="piValue_3">
+       <item row="7" column="1">
+        <widget class="QLineEdit" name="commandValue_3">
          <property name="readOnly">
           <bool>true</bool>
          </property>
@@ -515,8 +531,8 @@
      <widget class="QLabel" name="irStatusLabel_3">
       <property name="geometry">
        <rect>
-        <x>20</x>
-        <y>320</y>
+        <x>10</x>
+        <y>330</y>
         <width>51</width>
         <height>16</height>
        </rect>
@@ -528,7 +544,36 @@
      <widget class="QLabel" name="irStatusImage_3">
       <property name="geometry">
        <rect>
-        <x>120</x>
+        <x>60</x>
+        <y>300</y>
+        <width>81</width>
+        <height>81</height>
+       </rect>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::Box</enum>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+     </widget>
+     <widget class="QLabel" name="lfStatusLabel_3">
+      <property name="geometry">
+       <rect>
+        <x>160</x>
+        <y>330</y>
+        <width>51</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string>LF status:</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="lfStatusImage_3">
+      <property name="geometry">
+       <rect>
+        <x>210</x>
         <y>300</y>
         <width>81</width>
         <height>81</height>
@@ -610,28 +655,25 @@
   <tabstop>forwardValue</tabstop>
   <tabstop>leftValue</tabstop>
   <tabstop>rightValue</tabstop>
-  <tabstop>lineValue</tabstop>
   <tabstop>yValue</tabstop>
   <tabstop>headingValue</tabstop>
   <tabstop>xValue</tabstop>
-  <tabstop>piValue</tabstop>
+  <tabstop>commandValue</tabstop>
   <tabstop>rightValue_2</tabstop>
   <tabstop>ipValue_2</tabstop>
   <tabstop>headingValue_2</tabstop>
   <tabstop>yValue_2</tabstop>
   <tabstop>xValue_2</tabstop>
-  <tabstop>piValue_2</tabstop>
+  <tabstop>commandValue_2</tabstop>
   <tabstop>leftValue_2</tabstop>
-  <tabstop>lineValue_2</tabstop>
   <tabstop>forwardValue_2</tabstop>
   <tabstop>rightValue_3</tabstop>
   <tabstop>ipValue_3</tabstop>
   <tabstop>headingValue_3</tabstop>
   <tabstop>yValue_3</tabstop>
   <tabstop>xValue_3</tabstop>
-  <tabstop>piValue_3</tabstop>
+  <tabstop>commandValue_3</tabstop>
   <tabstop>leftValue_3</tabstop>
-  <tabstop>lineValue_3</tabstop>
   <tabstop>forwardValue_3</tabstop>
  </tabstops>
  <resources/>
