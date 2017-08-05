@@ -4,7 +4,7 @@ import threading
 import binascii
 from enum import Enum
 from random import *
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QLabel
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QLabel, QPushButton
 from PyQt5.QtNetwork import QTcpServer, QTcpSocket, QAbstractSocket, QHostAddress
 from PyQt5.QtCore import QObject, QThread, QReadWriteLock, QDataStream, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QPixmap
@@ -114,7 +114,7 @@ class ThreadedServer(QTcpServer):
 		self.close()
 
 	def passCommand(self, command, name):
-		self.testSend.emit(command)
+		self.testSend.emit(command, name)
 
 class MyWindow(QMainWindow):
 	stateChanged = pyqtSignal(str)
@@ -153,6 +153,10 @@ class MyWindow(QMainWindow):
 		self.pacman = Values()
 		self.ghost1 = Values()
 		self.ghost2 = Values()
+		self.manual = False
+		self.pacIP = "192.168.1.103"
+		self.ghost1IP = "192.168.1.104"
+		self.ghost2IP = "192.168.1.105"
 
 		super().__init__(parent)
 		self.serverState = "Init"
@@ -160,6 +164,13 @@ class MyWindow(QMainWindow):
 		self.ui = Ui_MainWindow()
 		self.ui.setupUi(self)
 		self.ui.stopButton.setEnabled(False)
+		self.ui.automaticButton.setEnabled(False)
+		buttons = self.ui.manualTab.findChildren(QPushButton)
+		for button in buttons:
+			thing = button.objectName()
+			test = getattr(self.ui, thing)
+			test.clicked.connect(self.manualCommand)
+			test.setEnabled(False)
 
 		# Set up server
 		self.server = ThreadedServer(self)
@@ -167,6 +178,8 @@ class MyWindow(QMainWindow):
 		# Connect buttons
 		self.ui.startButton.clicked.connect(self.startServer)
 		self.ui.stopButton.clicked.connect(self.stopServer)
+		self.ui.automaticButton.clicked.connect(self.autoMode)
+		self.ui.overrideButton.clicked.connect(self.manualMode)
 		self.stateChanged.connect(self.ui.statusValue.setText)
 
 		self.server.dataOut.connect(self.calculateNextCommand)
@@ -192,6 +205,60 @@ class MyWindow(QMainWindow):
 		self.serverState = "Stopped"
 		self.stateChanged.emit(self.serverState)
 		self.server.closeServer()
+		
+	def autoMode(self):
+		self.ui.overrideButton.setEnabled(True)
+		self.ui.automaticButton.setEnabled(False)
+		self.manual = False
+		buttons = self.ui.manualTab.findChildren(QPushButton)
+		for button in buttons:
+			thing = button.objectName()
+			test = getattr(self.ui, thing)
+			test.setEnabled(False)
+		
+	def manualMode(self):
+		self.ui.overrideButton.setEnabled(False)
+		self.ui.automaticButton.setEnabled(True)
+		self.manual = True
+		buttons = self.ui.manualTab.findChildren(QPushButton)
+		for button in buttons:
+			thing = button.objectName()
+			test = getattr(self.ui, thing)
+			test.setEnabled(True)
+			
+	def manualCommand(self):
+		whichButton = self.sender().objectName()
+		if whichButton == "pacUpButton":
+			self.sendCommand.emit(Command.FORWARD, self.pacIP)
+		elif whichButton == "pacLeftButton":
+			self.sendCommand.emit(Command.STOP_LEFT_FORWARD, self.pacIP)
+		elif whichButton == "pacRightButton":
+			self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, self.pacIP)
+		elif whichButton == "pacAdjustLeftButton":
+			self.sendCommand.emit(Command.ADJUST_LEFT, self.pacIP)
+		elif whichButton == "pacAdjustRightButton":
+			self.sendCommand.emit(Command.ADJUST_RIGHT, self.pacIP)
+		elif whichButton == "ghost1UpButton":
+			self.sendCommand.emit(Command.FORWARD, self.ghost1IP)
+		elif whichButton == "ghost1LeftButton":
+			self.sendCommand.emit(Command.STOP_LEFT_FORWARD, self.ghost1IP)
+		elif whichButton == "ghost1RightButton":
+			self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, self.ghost1IP)
+		elif whichButton == "ghost1AdjustLeftButton":
+			self.sendCommand.emit(Command.ADJUST_LEFT, self.ghost1IP)
+		elif whichButton == "ghost1AdjustRightButton":
+			self.sendCommand.emit(Command.ADJUST_RIGHT, self.ghost1IP)
+		elif whichButton == "ghost2UpButton":
+			self.sendCommand.emit(Command.FORWARD, self.ghost2IP)
+		elif whichButton == "ghost2LeftButton":
+			self.sendCommand.emit(Command.STOP_LEFT_FORWARD, self.ghost2IP)
+		elif whichButton == "ghost2RightButton":
+			self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, self.ghost2IP)
+		elif whichButton == "ghost2AdjustLeftButton":
+			self.sendCommand.emit(Command.ADJUST_LEFT, self.ghost2IP)
+		elif whichButton == "ghost2AdjustRightButton":
+			self.sendCommand.emit(Command.ADJUST_RIGHT, self.ghost2IP)
+			
 
 	def calculateNextCommand(self, data, address):
 		global LOCALTESTING
@@ -260,10 +327,9 @@ class MyWindow(QMainWindow):
 			self.ghost2.irState = self.irState
 			#self.ghost2.prevState = self.previous
 
-	def newCommand(self):
-		pacIP = "192.168.1.103"
-		ghost1IP = "192.168.1.104"
-		ghost2IP = "192.168.1.105"
+	def newCommand(self):		
+		if self.manual:
+			return
 
 		if self.rover == "pacman":
 			if self.pacman.irState == "01":
@@ -273,31 +339,31 @@ class MyWindow(QMainWindow):
 				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
 					x = randint(0, 2)
 					choice = commands[x]
-					self.sendCommand.emit(choice, pacIP)
+					self.sendCommand.emit(choice, self.pacIP)
 			if self.pacman.irState == "03":
 				commands = [Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
 				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
 					x = randint(0, 1)
 					choice = commands[x]
-					self.sendCommand.emit(choice, pacIP)
+					self.sendCommand.emit(choice, self.pacIP)
 			if self.pacman.irState == "04":
 				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
-					self.sendCommand.emit(Command.STOP_LEFT_FORWARD, pacIP)
+					self.sendCommand.emit(Command.STOP_LEFT_FORWARD, self.pacIP)
 			if self.pacman.irState == "05":
 				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
-					self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, pacIP)
+					self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, self.pacIP)
 			if self.pacman.irState == "06":
 				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD]
 				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
 					x = randint(0, 1)
 					choice = commands[x]
-					self.sendCommand.emit(choice, pacIP)
+					self.sendCommand.emit(choice, self.pacIP)
 			if self.pacman.irState == "07":
 				commands = [Command.FORWARD, Command.STOP_RIGHT_FORWARD]
 				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
 					x = randint(0, 1)
 					choice = commands[x]
-					self.sendCommand.emit(choice, pacIP)
+					self.sendCommand.emit(choice, self.pacIP)
 			self.pacman.prevState = self.pacman.irState
 
 			if self.rover == "ghost1":
@@ -308,31 +374,31 @@ class MyWindow(QMainWindow):
 					if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
 						x = randint(0, 2)
 						choice = commands[x]
-						self.sendCommand.emit(choice, ghost1IP)
+						self.sendCommand.emit(choice, self.ghost1IP)
 				if self.ghost1.irState == "03":
 					commands = [Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
 					if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
 						x = randint(0, 1)
 						choice = commands[x]
-						self.sendCommand.emit(choice, ghost1IP)
+						self.sendCommand.emit(choice, self.ghost1IP)
 				if self.ghost1.irState == "04":
 					if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
-						self.sendCommand.emit(Command.STOP_LEFT_FORWARD, ghost1IP)
+						self.sendCommand.emit(Command.STOP_LEFT_FORWARD, self.ghost1IP)
 				if self.ghost1.irState == "05":
 					if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
-						self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, ghost1IP)
+						self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, self.ghost1IP)
 				if self.ghost1.irState == "06":
 					commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD]
 					if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
 						x = randint(0, 1)
 						choice = commands[x]
-						self.sendCommand.emit(choice, ghost1IP)
+						self.sendCommand.emit(choice, self.ghost1IP)
 				if self.ghost1.irState == "07":
 					commands = [Command.FORWARD, Command.STOP_RIGHT_FORWARD]
 					if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
 						x = randint(0, 1)
 						choice = commands[x]
-						self.sendCommand.emit(choice, ghost1IP)
+						self.sendCommand.emit(choice, self.ghost1IP)
 			self.ghost1.prevState = self.ghost1.irState
 
 
