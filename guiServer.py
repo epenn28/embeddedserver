@@ -266,74 +266,74 @@ class MyWindow(QMainWindow):
 		ghost2IP = "192.168.1.105"
 
 		if self.rover == "pacman":
-	        if self.pacman.irState == "01":
-	                pass
-	        if self.pacman.irState == "02":
-	                commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
-	                if self.pacman.prevState == "01" or self.pacman.prevState == "00":
-	                        x = randint(0, 2)
-	                        choice = commands[x]
-	                        self.sendCommand.emit(choice, pacIP)
-	        if self.pacman.irState == "03":
-	                commands = [Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
-	                if self.pacman.prevState == "01" or self.pacman.prevState == "00":
-	                        x = randint(0, 1)
-	                        choice = commands[x]
-	                        self.sendCommand.emit(choice, pacIP)
-	        if self.pacman.irState == "04":
-	                if self.pacman.prevState == "01" or self.pacman.prevState == "00":
-	                        self.sendCommand.emit(Command.STOP_LEFT_FORWARD, pacIP)
-	        if self.pacman.irState == "05":
-	                if self.pacman.prevState == "01" or self.pacman.prevState == "00":
-	                        self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, pacIP)
-	        if self.pacman.irState == "06":
-	                commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD]
-	                if self.pacman.prevState == "01" or self.pacman.prevState == "00":
-	                        x = randint(0, 1)
-	                        choice = commands[x]
-	                        self.sendCommand.emit(choice, pacIP)
-	        if self.pacman.irState == "07":
-	                commands = [Command.FORWARD, Command.STOP_RIGHT_FORWARD]
-	                if self.pacman.prevState == "01" or self.pacman.prevState == "00":
-	                        x = randint(0, 1)
-	                        choice = commands[x]
-	                        self.sendCommand.emit(choice, pacIP)
-	        self.pacman.prevState = self.pacman.irState
+			if self.pacman.irState == "01":
+				pass
+			if self.pacman.irState == "02":
+				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
+				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
+					x = randint(0, 2)
+					choice = commands[x]
+					self.sendCommand.emit(choice, pacIP)
+			if self.pacman.irState == "03":
+				commands = [Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
+				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
+					x = randint(0, 1)
+					choice = commands[x]
+					self.sendCommand.emit(choice, pacIP)
+			if self.pacman.irState == "04":
+				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
+					self.sendCommand.emit(Command.STOP_LEFT_FORWARD, pacIP)
+			if self.pacman.irState == "05":
+				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
+					self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, pacIP)
+			if self.pacman.irState == "06":
+				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD]
+				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
+					x = randint(0, 1)
+					choice = commands[x]
+					self.sendCommand.emit(choice, pacIP)
+			if self.pacman.irState == "07":
+				commands = [Command.FORWARD, Command.STOP_RIGHT_FORWARD]
+				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
+					x = randint(0, 1)
+					choice = commands[x]
+					self.sendCommand.emit(choice, pacIP)
+			self.pacman.prevState = self.pacman.irState
 
-		if self.rover == "ghost1":
-	        if self.ghost1.irState == "01":
-	                pass
-	        if self.ghost1.irState == "02":
-	                commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
-	                if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
-	                        x = randint(0, 2)
-	                        choice = commands[x]
-	                        self.sendCommand.emit(choice, ghost1IP)
-	        if self.ghost1.irState == "03":
-	                commands = [Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
-	                if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
-	                        x = randint(0, 1)
-	                        choice = commands[x]
-	                        self.sendCommand.emit(choice, ghost1IP)
-	        if self.ghost1.irState == "04":
-	                if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
-	                        self.sendCommand.emit(Command.STOP_LEFT_FORWARD, ghost1IP)
-	        if self.ghost1.irState == "05":
-	                if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
-	                        self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, ghost1IP)
-	        if self.ghost1.irState == "06":
-	                commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD]
-	                if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
-	                        x = randint(0, 1)
-	                        choice = commands[x]
-	                        self.sendCommand.emit(choice, ghost1IP)
-	        if self.ghost1.irState == "07":
-	                commands = [Command.FORWARD, Command.STOP_RIGHT_FORWARD]
-	                if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
-	                        x = randint(0, 1)
-	                        choice = commands[x]
-	                        self.sendCommand.emit(choice, ghost1IP)
-	        self.ghost1.prevState = self.ghost1.irState
+			if self.rover == "ghost1":
+				if self.ghost1.irState == "01":
+					pass
+				if self.ghost1.irState == "02":
+					commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
+					if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
+						x = randint(0, 2)
+						choice = commands[x]
+						self.sendCommand.emit(choice, ghost1IP)
+				if self.ghost1.irState == "03":
+					commands = [Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
+					if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
+						x = randint(0, 1)
+						choice = commands[x]
+						self.sendCommand.emit(choice, ghost1IP)
+				if self.ghost1.irState == "04":
+					if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
+						self.sendCommand.emit(Command.STOP_LEFT_FORWARD, ghost1IP)
+				if self.ghost1.irState == "05":
+					if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
+						self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, ghost1IP)
+				if self.ghost1.irState == "06":
+					commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD]
+					if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
+						x = randint(0, 1)
+						choice = commands[x]
+						self.sendCommand.emit(choice, ghost1IP)
+				if self.ghost1.irState == "07":
+					commands = [Command.FORWARD, Command.STOP_RIGHT_FORWARD]
+					if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
+						x = randint(0, 1)
+						choice = commands[x]
+						self.sendCommand.emit(choice, ghost1IP)
+			self.ghost1.prevState = self.ghost1.irState
 
 
 	def drawImage(self):
