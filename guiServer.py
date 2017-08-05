@@ -19,6 +19,7 @@ class Command(Enum):
 	ADJUST_LEFT = 3
 	ADJUST_RIGHT = 4
 	STOP = 5
+	PAUSE = 6
 
 class Values:
 	front = None
@@ -66,7 +67,10 @@ class Worker(QObject):
 		if self.objectName() == name or name == "all":
 			header = b"AA"
 			footer = b"FF"
-			value = str(command.value).rjust(2, '0').encode()
+			if command == Command.PAUSE:
+				value = str(5).rjust(2, '0').encode()
+			else:
+				value = str(command.value).rjust(2, '0').encode()
 			data = binascii.unhexlify(header + value + footer)
 			self.socket.write(data)
 			if command == Command.STOP:
@@ -110,8 +114,7 @@ class ThreadedServer(QTcpServer):
 		self.close()
 
 	def passCommand(self, command, name):
-		for (thread, worker) in self.client_list:
-			self.testSend.emit(command)
+		self.testSend.emit(command)
 
 class MyWindow(QMainWindow):
 	stateChanged = pyqtSignal(str)
