@@ -20,7 +20,12 @@ class Command(Enum):
 	ADJUST_LEFT = 3
 	ADJUST_RIGHT = 4
 	STOP = 5
-	PAUSE = 6
+	MANUAL_FORWARD = 6
+	MANUAL_ADJUST_RIGHT = 7
+	MANUAL_ADJUST_LEFT = 8
+	MANUAL_LEFT = 9
+	MANUAL_RIGHT = 10
+	PAUSE = 11
 
 class Values:
 	front = None
@@ -70,6 +75,8 @@ class Worker(QObject):
 			footer = b"FF"
 			if command == Command.PAUSE:
 				value = str(5).rjust(2, '0').encode()
+			elif command == Command.MANUAL_RIGHT:
+				value = "A".rjust(2, '0').encode()
 			else:
 				value = str(command.value).rjust(2, '0').encode()
 			data = binascii.unhexlify(header + value + footer)
@@ -229,35 +236,35 @@ class MyWindow(QMainWindow):
 		ghost2IP = "192.168.1.105"
 		whichButton = self.sender().objectName()
 		if whichButton == "pacUpButton":
-			self.sendCommand.emit(Command.FORWARD, pacIP)
+			self.sendCommand.emit(Command.MANUAL_FORWARD, pacIP)
 		elif whichButton == "pacLeftButton":
-			self.sendCommand.emit(Command.STOP_LEFT_FORWARD, pacIP)
+			self.sendCommand.emit(Command.MANUAL_LEFT, pacIP)
 		elif whichButton == "pacRightButton":
-			self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, pacIP)
+			self.sendCommand.emit(Command.MANUAL_RIGHT, pacIP)
 		elif whichButton == "pacAdjustLeftButton":
-			self.sendCommand.emit(Command.ADJUST_LEFT, pacIP)
+			self.sendCommand.emit(Command.MANUAL_ADJUST_LEFT, pacIP)
 		elif whichButton == "pacAdjustRightButton":
-			self.sendCommand.emit(Command.ADJUST_RIGHT, pacIP)
+			self.sendCommand.emit(Command.MANUAL_ADJUST_RIGHT, pacIP)
 		elif whichButton == "ghost1UpButton":
-			self.sendCommand.emit(Command.FORWARD, ghost1IP)
+			self.sendCommand.emit(Command.MANUAL_FORWARD, ghost1IP)
 		elif whichButton == "ghost1LeftButton":
-			self.sendCommand.emit(Command.STOP_LEFT_FORWARD, ghost1IP)
+			self.sendCommand.emit(Command.MANUAL_LEFT, ghost1IP)
 		elif whichButton == "ghost1RightButton":
-			self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, ghost1IP)
+			self.sendCommand.emit(Command.MANUAL_RIGHT, ghost1IP)
 		elif whichButton == "ghost1AdjustLeftButton":
-			self.sendCommand.emit(Command.ADJUST_LEFT, ghost1IP)
+			self.sendCommand.emit(Command.MANUAL_ADJUST_LEFT, ghost1IP)
 		elif whichButton == "ghost1AdjustRightButton":
-			self.sendCommand.emit(Command.ADJUST_RIGHT, ghost1IP)
+			self.sendCommand.emit(Command.MANUAL_ADJUST_RIGHT, ghost1IP)
 		elif whichButton == "ghost2UpButton":
-			self.sendCommand.emit(Command.FORWARD, ghost2IP)
+			self.sendCommand.emit(Command.MANUAL_FORWARD, ghost2IP)
 		elif whichButton == "ghost2LeftButton":
-			self.sendCommand.emit(Command.STOP_LEFT_FORWARD, ghost2IP)
+			self.sendCommand.emit(Command.MANUAL_LEFT, ghost2IP)
 		elif whichButton == "ghost2RightButton":
-			self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, ghost2IP)
+			self.sendCommand.emit(Command.MANUAL_RIGHT, ghost2IP)
 		elif whichButton == "ghost2AdjustLeftButton":
-			self.sendCommand.emit(Command.ADJUST_LEFT, ghost2IP)
+			self.sendCommand.emit(Command.MANUAL_ADJUST_LEFT, ghost2IP)
 		elif whichButton == "ghost2AdjustRightButton":
-			self.sendCommand.emit(Command.ADJUST_RIGHT, ghost2IP)
+			self.sendCommand.emit(Command.MANUAL_ADJUST_RIGHT, ghost2IP)
 		
 		time.sleep(.5)
 		self.sendCommand.emit(Command.PAUSE, "all")
@@ -404,7 +411,42 @@ class MyWindow(QMainWindow):
 					x = randint(0, 1)
 					choice = commands[x]
 					self.sendCommand.emit(choice, ghost1IP)
-		self.ghost1.prevState = self.ghost1.irState
+			self.ghost1.prevState = self.ghost1.irState
+			
+		if self.rover == "ghost2":
+			if self.ghost2.irState == "01":  # Forward open, left blocked, right blocked
+				pass
+			if self.ghost2.irState == "02":  # Forward open, left open, right open
+				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
+				if self.ghost2.prevState == "01" or self.ghost2.prevState == "00":
+					x = randint(0, 2)
+					choice = commands[x]
+					self.sendCommand.emit(choice, ghost2IP)
+			if self.ghost2.irState == "03":  # Forward blocked, left open, right open
+				commands = [Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
+				if self.ghost2.prevState == "01" or self.ghost2.prevState == "00":
+					x = randint(0, 1)
+					choice = commands[x]
+					self.sendCommand.emit(choice, ghost2IP)
+			if self.ghost2.irState == "04":  # Forward blocked, left open, right blocked
+				if self.ghost2.prevState == "01" or self.ghost2.prevState == "00":
+					self.sendCommand.emit(Command.STOP_LEFT_FORWARD, ghost2IP)
+			if self.ghost2.irState == "05":  # Forward blocked, left blocked, right open
+				if self.ghost2.prevState == "01" or self.ghost2.prevState == "00":
+					self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, ghost2IP)
+			if self.ghost2.irState == "06":  # Forward open, left open, right blocked
+				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD]
+				if self.ghost2.prevState == "01" or self.ghost2.prevState == "00":
+					x = randint(0, 1)
+					choice = commands[x]
+					self.sendCommand.emit(choice, ghost2IP)
+			if self.ghost2.irState == "07":  # Forward open, left blocked, right open
+				commands = [Command.FORWARD, Command.STOP_RIGHT_FORWARD]
+				if self.ghost2.prevState == "01" or self.ghost2.prevState == "00":
+					x = randint(0, 1)
+					choice = commands[x]
+					self.sendCommand.emit(choice, ghost2IP)
+			self.ghost2.prevState = self.ghost2.irState
 
 
 	def drawImage(self):
