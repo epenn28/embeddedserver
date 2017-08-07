@@ -540,6 +540,6 @@ class Ui_MainWindow(object):
         self.stopButton.setText(_translate("MainWindow", "Stop"))
         self.statusLabel.setText(_translate("MainWindow", "Server status:"))
         self.statusValue.setText(_translate("MainWindow", "Inititalizing"))
-        self.overrideButton.setText(_translate("MainWindow", "Manual Override"))
+        self.overrideButton.setText(_translate("MainWindow", "Manual Mode"))
         self.automaticButton.setText(_translate("MainWindow", "Automatic Mode"))
 
