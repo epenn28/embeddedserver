@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QLabel, QPus
 from PyQt5.QtNetwork import QTcpServer, QTcpSocket, QAbstractSocket, QHostAddress
 from PyQt5.QtCore import QObject, QThread, QReadWriteLock, QDataStream, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QPixmap
-from ui_mainwindow import Ui_MainWindow
+from ui_mainwindow import Ui_PacMan
 
 LOCALTESTING = False
 
@@ -172,11 +172,12 @@ class MyWindow(QMainWindow):
 		self.ghost2.yPos = 2
 		self.ghost2.heading = "south"
 		self.manual = True
+		self.score = 0
 
 		super().__init__(parent)
 		self.serverState = "Init"
 		self.stateChanged.emit(self.serverState)
-		self.ui = Ui_MainWindow()
+		self.ui = Ui_PacMan()
 		self.ui.setupUi(self)
 		self.ui.stopButton.setEnabled(False)
 		#self.ui.automaticButton.setEnabled(False)
@@ -220,7 +221,7 @@ class MyWindow(QMainWindow):
 		self.serverState = "Stopped"
 		self.stateChanged.emit(self.serverState)
 		self.server.closeServer()
-		
+
 	def autoMode(self):
 		self.ui.overrideButton.setEnabled(True)
 		self.ui.automaticButton.setEnabled(False)
@@ -230,7 +231,7 @@ class MyWindow(QMainWindow):
 			thing = button.objectName()
 			test = getattr(self.ui, thing)
 			test.setEnabled(False)
-		
+
 	def manualMode(self):
 		self.ui.overrideButton.setEnabled(False)
 		self.ui.automaticButton.setEnabled(True)
@@ -240,7 +241,7 @@ class MyWindow(QMainWindow):
 			thing = button.objectName()
 			test = getattr(self.ui, thing)
 			test.setEnabled(True)
-			
+
 	def manualCommand(self):
 		pacIP = "192.168.1.103"
 		ghost1IP = "192.168.1.104"
@@ -276,14 +277,14 @@ class MyWindow(QMainWindow):
 			self.sendCommand.emit(Command.MANUAL_ADJUST_LEFT, ghost2IP)
 		elif whichButton == "ghost2AdjustRightButton":
 			self.sendCommand.emit(Command.MANUAL_ADJUST_RIGHT, ghost2IP)
-		
+
 		time.sleep(.5)
 		self.sendCommand.emit(Command.PAUSE, "all")
-			
+
 		self.pacman.prevState = self.pacman.irState
 		self.ghost1.prevState = self.ghost1.irState
 		self.ghost2.prevState = self.ghost2.irState
-			
+
 
 	def calculateNextCommand(self, data, address):
 		global LOCALTESTING
@@ -346,7 +347,7 @@ class MyWindow(QMainWindow):
 		elif self.rover == "ghost2":
 			self.ghost2.irState = self.irState
 			#self.ghost2.prevState = self.previous
-			
+
 	def decideCommandAI(self, x):
 		if self.ghost1.xPos == self.pacman.xPos and self.ghost2.xPos == self.pacman.xPos:
 			if self.ghost1.yPos == self.pacman.yPos or self.ghost2.yPos == self.pacman.yPos:
@@ -652,7 +653,7 @@ class MyWindow(QMainWindow):
 					elif self.pacman.heading == "west":
 						x = 1
 
-	
+
 	def decideCoordinate(self, command):
 		if self.rover == "pacman":
 			if self.pacman.heading == "north":
@@ -706,7 +707,7 @@ class MyWindow(QMainWindow):
 				elif command == Command.STOP_RIGHT_FORWARD:
 					self.pacman.yPos += 2
 					self.pacman.heading = "north"
-					
+
 		elif self.rover == "ghost1":
 			if self.ghost1.heading == "north":
 				if command == Command.FORWARD:
@@ -759,10 +760,10 @@ class MyWindow(QMainWindow):
 				elif command == Command.STOP_RIGHT_FORWARD:
 					self.ghost1.yPos += 2
 					self.ghost1.heading = "north"
-		
+
 		elif self.rover == "ghost2":
 			pass
-			
+
 
 	def newCommand(self):
 		pacIP = "192.168.1.103"
@@ -783,6 +784,7 @@ class MyWindow(QMainWindow):
 					choice = commands[x]
 					self.decideCoordinate(choice)
 					self.sendCommand.emit(choice, pacIP)
+					self.score += 1
 			if self.pacman.irState == "03":  # Forward blocked, left open, right open
 				commands = [Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
 				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
@@ -790,16 +792,19 @@ class MyWindow(QMainWindow):
 					choice = commands[x]
 					self.decideCoordinate(choice)
 					self.sendCommand.emit(choice, pacIP)
+					self.score += 1
 			if self.pacman.irState == "04":  # Forward blocked, left open, right blocked
 				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
 					self.decideCommandAI(x)
 					self.decideCoordinate(Command.STOP_LEFT_FORWARD)
 					self.sendCommand.emit(Command.STOP_LEFT_FORWARD, pacIP)
+					self.score += 1
 			if self.pacman.irState == "05":  # Forward blocked, left blocked, right open
 				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
 					self.decideCommandAI(x)
 					self.decideCoordinate(Command.STOP_RIGHT_FORWARD)
 					self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, pacIP)
+					self.score += 1
 			if self.pacman.irState == "06":  # Forward open, left open, right blocked
 				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD]
 				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
@@ -807,6 +812,7 @@ class MyWindow(QMainWindow):
 					choice = commands[x]
 					self.decideCoordinate(choice)
 					self.sendCommand.emit(choice, pacIP)
+					self.score += 1
 			if self.pacman.irState == "07":  # Forward open, left blocked, right open
 				commands = [Command.FORWARD, Command.STOP_RIGHT_FORWARD]
 				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
@@ -814,6 +820,7 @@ class MyWindow(QMainWindow):
 					choice = commands[x]
 					self.decideCoordinate(choice)
 					self.sendCommand.emit(choice, pacIP)
+					self.score += 1
 			self.pacman.prevState = self.pacman.irState
 
 		if self.rover == "ghost1":
@@ -862,7 +869,7 @@ class MyWindow(QMainWindow):
 					self.decideCoordinate(choice)
 					self.sendCommand.emit(choice, ghost1IP)
 			self.ghost1.prevState = self.ghost1.irState
-		
+
 		if self.rover == "ghost2":
 			if self.ghost2.irState == "01":  # Forward open, left blocked, right blocked
 				self.decideCommandAI(x)
@@ -947,12 +954,12 @@ class MyWindow(QMainWindow):
 			self.ui.rightValue.setText(self.right)
 			self.ui.irStatusImage.setPixmap(self.irPixmap)
 			self.ui.lfStatusImage.setPixmap(self.lfPixmap)
-			
+
 			self.x = str(self.pacman.xPos)
 			self.y = str(self.pacman.yPos)
 			self.heading = str(self.pacman.heading)
 			self.previous = str(self.pacman.prevState)
-			
+
 			self.ui.xValue.setText(self.x)
 			self.ui.yValue.setText(self.y)
 			self.ui.headingValue.setText(self.heading)
@@ -964,12 +971,12 @@ class MyWindow(QMainWindow):
 			self.ui.rightValue_2.setText(self.right)
 			self.ui.irStatusImage_2.setPixmap(self.irPixmap)
 			self.ui.lfStatusImage_2.setPixmap(self.lfPixmap)
-			
+
 			self.x = str(self.ghost1.xPos)
 			self.y = str(self.ghost1.yPos)
 			self.heading = str(self.ghost1.heading)
 			self.previous = str(self.ghost1.prevState)
-			
+
 			self.ui.xValue_2.setText(self.x)
 			self.ui.yValue_2.setText(self.y)
 			self.ui.headingValue_2.setText(self.heading)
@@ -981,12 +988,12 @@ class MyWindow(QMainWindow):
 			self.ui.rightValue_3.setText(self.right)
 			self.ui.irStatusImage_3.setPixmap(self.irPixmap)
 			self.ui.lfStatusImage_3.setPixmap(self.lfPixmap)
-			
+
 			self.x = str(self.ghost2.xPos)
 			self.y = str(self.ghost2.yPos)
 			self.heading = str(self.ghost2.heading)
 			self.previous = str(self.ghost2.prevState)
-			
+
 			self.ui.xValue_3.setText(self.x)
 			self.ui.yValue_3.setText(self.y)
 			self.ui.headingValue_3.setText(self.heading)

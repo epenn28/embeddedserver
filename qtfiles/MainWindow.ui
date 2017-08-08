@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MainWindow</class>
- <widget class="QMainWindow" name="MainWindow">
+ <class>PacMan</class>
+ <widget class="QMainWindow" name="PacMan">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -591,7 +591,7 @@
      <attribute name="title">
       <string>Manual Control</string>
      </attribute>
-     <widget class="QWidget" name="">
+     <widget class="QWidget" name="layoutWidget">
       <property name="geometry">
        <rect>
         <x>40</x>
@@ -941,13 +941,6 @@
        </item>
       </layout>
      </widget>
-     <zorder>pacControlLabel</zorder>
-     <zorder>pacUpButton</zorder>
-     <zorder>pacAdjustLeftButton</zorder>
-     <zorder>pacAdjustRightButton</zorder>
-     <zorder>pacLeftButton</zorder>
-     <zorder>pacRightButton</zorder>
-     <zorder>pacUpButton_5</zorder>
     </widget>
    </widget>
    <widget class="QPushButton" name="startButton">
@@ -1029,6 +1022,35 @@
     </property>
     <property name="text">
      <string>Automatic Mode</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="scoreLabel">
+    <property name="geometry">
+     <rect>
+      <x>30</x>
+      <y>30</y>
+      <width>71</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;center&quot;&gt;Score:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="scoreValue">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>50</y>
+      <width>111</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignCenter</set>
     </property>
    </widget>
   </widget>
