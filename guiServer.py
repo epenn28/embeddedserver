@@ -109,8 +109,6 @@ class ThreadedServer(QTcpServer):
 		thread.started.connect(worker.run)
 		thread.start()
 		self.testSend.connect(worker.send)
-		#if len(self.client_list) == 2:
-		#	self.testSend.emit(Command.FORWARD, "all")
 		self.serverRunning.emit("Running")
 
 	def newData(self, data, ip):
@@ -128,6 +126,7 @@ class ThreadedServer(QTcpServer):
 class MyWindow(QMainWindow):
 	stateChanged = pyqtSignal(str)
 	sendCommand = pyqtSignal(Command, str)
+	scoreChanged = pyqtSignal(int)
 
 	def __init__(self, parent = None):
 		self.ip = ""
@@ -201,6 +200,7 @@ class MyWindow(QMainWindow):
 
 		self.server.dataOut.connect(self.calculateNextCommand)
 		self.server.serverRunning.connect(self.ui.statusValue.setText)
+		self.scoreChanged.connect(self.ui.scoreValue.setText)
 
 		self.serverState = "Stopped"
 		self.stateChanged.emit(self.serverState)
@@ -771,7 +771,6 @@ class MyWindow(QMainWindow):
 		ghost2IP = "192.168.1.105"
 		x = 0
 		if self.manual:
-			#self.sendCommand.emit(Command.PAUSE, "all")
 			return
 
 		if self.rover == "pacman":
@@ -822,6 +821,7 @@ class MyWindow(QMainWindow):
 					self.sendCommand.emit(choice, pacIP)
 					self.score += 1
 			self.pacman.prevState = self.pacman.irState
+			self.scoreChanged.emit(self.score)
 
 		if self.rover == "ghost1":
 			if self.ghost1.irState == "01":  # Forward open, left blocked, right blocked
