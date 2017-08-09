@@ -3,6 +3,7 @@ import socket
 import threading
 import binascii
 import time
+import numpy
 from enum import Enum
 from random import *
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QLabel, QPushButton
@@ -126,7 +127,7 @@ class ThreadedServer(QTcpServer):
 class MyWindow(QMainWindow):
 	stateChanged = pyqtSignal(str)
 	sendCommand = pyqtSignal(Command, str)
-	scoreChanged = pyqtSignal(int)
+	scoreChanged = pyqtSignal(str)
 
 	def __init__(self, parent = None):
 		self.ip = ""
@@ -340,318 +341,18 @@ class MyWindow(QMainWindow):
 	def updateValues(self):
 		if self.rover == "pacman":
 			self.pacman.irState = self.irState
+			#if(int(self.left) <= int(12)):
+			#	print("Pacman state changed", self.left)
 			#self.pacman.prevState = self.previous
 		elif self.rover == "ghost1":
 			self.ghost1.irState = self.irState
+			#if(int(self.right) <= int(12)):
+			#	print("Ghost 1 state changed", self.right)
 			#self.ghost1.prevState = self.previous
 		elif self.rover == "ghost2":
 			self.ghost2.irState = self.irState
 			#self.ghost2.prevState = self.previous
-
-	def decideCommandAI(self, x):
-		if self.ghost1.xPos == self.pacman.xPos and self.ghost2.xPos == self.pacman.xPos:
-			if self.ghost1.yPos == self.pacman.yPos or self.ghost2.yPos == self.pacman.yPos:
-				self.sendCommand.emit(Command.PAUSE, "all")
-				#return False
-			elif self.ghost1.yPos > self.pacman.yPos and self.ghost2.yPos > self.pacman.yPos:
-				#move south
-				if self.pacman.heading == "north":
-					x = 1
-				elif self.pacman.heading == "south":
-					x = 0
-				elif self.pacman.heading == "east":
-					x = 1
-				elif self.pacman.heading == "west":
-					x = 1
-			elif self.ghost1.yPos > self.pacman.yPos and self.ghost2.yPos < self.pacman.yPos:
-				#move east or west
-				if self.pacman.heading == "north":
-					x = 1
-				elif self.pacman.heading == "south":
-					x = 1
-				elif self.pacman.heading == "east":
-					x = 0
-				elif self.pacman.heading == "west":
-					x = 0
-			elif self.ghost1.yPos < self.pacman.yPos and self.ghost2.yPos < self.pacman.yPos:
-				#move north
-				if self.pacman.heading == "north":
-					x = 0
-				elif self.pacman.heading == "south":
-					x = 1
-				elif self.pacman.heading == "east":
-					x = 1
-				elif self.pacman.heading == "west":
-					x = 1
-			elif self.ghost1.yPos < self.pacman.yPos and self.ghost2.yPos > self.pacman.yPos:
-				#move east or west
-				if self.pacman.heading == "north":
-					x = 1
-				elif self.pacman.heading == "south":
-					x = 1
-				elif self.pacman.heading == "east":
-					x = 0
-				elif self.pacman.heading == "west":
-					x = 0
-		elif self.ghost1.xPos == self.pacman.xPos and self.ghost2.xPos > self.pacman.xPos:
-			if self.ghost1.yPos == self.pacman.yPos:
-				self.sendCommand.emit(Command.PAUSE, "all")
-				#return False
-			#move west
-			elif self.pacman.heading == "north":
-				x = 1
-			elif self.pacman.heading == "south":
-				x = 1
-			elif self.pacman.heading == "east":
-				if self.pacman.irState == "02":
-					x = 2
-				else:
-					x = 1
-			elif self.pacman.heading == "west":
-				x = 0
-		elif self.ghost1.xPos == self.pacman.xPos and self.ghost2.xPos < self.pacman.xPos:
-			if self.ghost1.yPos == self.pacman.yPos:
-				self.sendCommand.emit(Command.PAUSE, "all")
-				#return False
-			#move east
-			elif self.pacman.heading == "north":
-				x = 1
-			elif self.pacman.heading == "south":
-				x = 1
-			elif self.pacman.heading == "east":
-				x = 0
-			elif self.pacman.heading == "west":
-				x = 1
-		elif self.ghost1.xPos > self.pacman.xPos and self.ghost2.xPos == self.pacman.xPos:
-			if self.ghost2.yPos == self.pacman.yPos:
-				self.sendCommand.emit(Command.PAUSE, "all")
-				#return False
-			#move west
-			elif self.pacman.heading == "north":
-				x = 1
-			elif self.pacman.heading == "south":
-				x = 1
-			elif self.pacman.heading == "east":
-				x = 1
-			elif self.pacman.heading == "west":
-				x = 0
-		elif self.ghost1.xPos < self.pacman.xPos and self.ghost2.xPos == self.pacman.xPos:
-			if self.ghost2.yPos == self.pacman.yPos:
-				self.sendCommand.emit(Command.PAUSE, "all")
-				#return False
-			#move east
-			elif self.pacman.heading == "north":
-				x = 1
-			elif self.pacman.heading == "south":
-				x = 1
-			elif self.pacman.heading == "east":
-				x = 0
-			elif self.pacman.heading == "west":
-				x = 1
-		elif self.ghost1.xPos > self.pacman.xPos and self.ghost2.xPos > self.pacman.xPos:
-			#move west
-			if self.pacman.heading == "north":
-				x = 1
-			elif self.pacman.heading == "south":
-				x = 1
-			elif self.pacman.heading == "east":
-				x = 1
-			elif self.pacman.heading == "west":
-				x = 0
-		elif self.ghost1.xPos < self.pacman.xPos and self.ghost2.xPos < self.pacman.xPos:
-			#move east
-			if self.pacman.heading == "north":
-				x = 1
-			elif self.pacman.heading == "south":
-				x = 1
-			elif self.pacman.heading == "east":
-				x = 0
-			elif self.pacman.heading == "west":
-				x = 1
-		elif self.ghost1.xPos < self.pacman.xPos and self.ghost2.xPos > self.pacman.xPos:
-			if self.ghost1.yPos == self.pacman.yPos and self.ghost2.yPos == self.pacman.yPos:
-				#move north or south
-				if self.pacman.heading == "north":
-					x = 0
-				elif self.pacman.heading == "south":
-					x = 0
-				elif self.pacman.heading == "east":
-					x = 1
-				elif self.pacman.heading == "west":
-					x = 1
-			elif self.ghost1.yPos == self.pacman.yPos and self.ghost2.yPos > self.pacman.yPos:
-				#move south
-				if self.pacman.heading == "north":
-					x = 1
-				elif self.pacman.heading == "south":
-					x = 0
-				elif self.pacman.heading == "east":
-					x = 1
-				elif self.pacman.heading == "west":
-					x = 1
-			elif self.ghost1.yPos == self.pacman.yPos and self.ghost2.yPos < self.pacman.yPos:
-				#move north
-				if self.pacman.heading == "north":
-					x = 0
-				elif self.pacman.heading == "south":
-					x = 1
-				elif self.pacman.heading == "east":
-					x = 1
-				elif self.pacman.heading == "west":
-					x = 1
-			elif self.ghost1.yPos > self.pacman.yPos and self.ghost2.yPos == self.pacman.yPos:
-				#move south
-				if self.pacman.heading == "north":
-					x = 1
-				elif self.pacman.heading == "south":
-					x = 0
-				elif self.pacman.heading == "east":
-					x = 1
-				elif self.pacman.heading == "west":
-					x = 1
-			elif self.ghost1.yPos < self.pacman.yPos and self.ghost2.yPos == self.pacman.yPos:
-				#move north
-				if self.pacman.heading == "north":
-					x = 0
-				elif self.pacman.heading == "south":
-					x = 1
-				elif self.pacman.heading == "east":
-					x = 1
-				elif self.pacman.heading == "west":
-					x = 1
-			elif self.ghost1.yPos > self.pacman.yPos and self.ghost2.yPos > self.pacman.yPos:
-				#move south
-				if self.pacman.heading == "north":
-					x = 1
-				elif self.pacman.heading == "south":
-					x = 0
-				elif self.pacman.heading == "east":
-					x = 1
-				elif self.pacman.heading == "west":
-					x = 1
-			elif self.ghost1.yPos < self.pacman.yPos and self.ghost2.yPos < self.pacman.yPos:
-				#move north
-				if self.pacman.heading == "north":
-					x = 0
-				elif self.pacman.heading == "south":
-					x = 1
-				elif self.pacman.heading == "east":
-					x = 1
-				elif self.pacman.heading == "west":
-					x = 1
-			elif self.ghost1.yPos > self.pacman.yPos and self.ghost2.yPos < self.pacman.yPos:
-				if (xPos - self.ghost1.xPos) < (self.ghost2.xPos - self.pacman.xPos):
-					#move east
-					if self.pacman.heading == "north":
-						x = 1
-					elif self.pacman.heading == "south":
-						x = 1
-					elif self.pacman.heading == "east":
-						x = 0
-					elif self.pacman.heading == "west":
-						x = 1
-				else:
-					#move west
-					if self.pacman.heading == "north":
-						x = 1
-					elif self.pacman.heading == "south":
-						x = 1
-					elif self.pacman.heading == "east":
-						x = 1
-					elif self.pacman.heading == "west":
-						x = 0
-		elif self.ghost1.xPos > self.pacman.xPos and self.ghost2.xPos < self.pacman.xPos:
-			if self.ghost1.yPos == self.pacman.yPos and self.ghost2.yPos == self.pacman.yPos:
-				#move north or south
-				if self.pacman.heading == "north":
-					x = 0
-				elif self.pacman.heading == "south":
-					x = 0
-				elif self.pacman.heading == "east":
-					x = 1
-				elif self.pacman.heading == "west":
-					x = 1
-			elif self.ghost1.yPos == self.pacman.yPos and self.ghost2.yPos > self.pacman.yPos:
-				#move south
-				if self.pacman.heading == "north":
-					x = 1
-				elif self.pacman.heading == "south":
-					x = 0
-				elif self.pacman.heading == "east":
-					x = 1
-				elif self.pacman.heading == "west":
-					x = 1
-			elif self.ghost1.yPos == self.pacman.yPos and self.ghost2.yPos < self.pacman.yPos:
-				#move north
-				if self.pacman.heading == "north":
-					x = 0
-				elif self.pacman.heading == "south":
-					x = 1
-				elif self.pacman.heading == "east":
-					x = 1
-				elif self.pacman.heading == "west":
-					x = 1
-			elif self.ghost1.yPos > self.pacman.yPos and self.ghost2.yPos == self.pacman.yPos:
-				#move south
-				if self.pacman.heading == "north":
-					x = 1
-				elif self.pacman.heading == "south":
-					x = 0
-				elif self.pacman.heading == "east":
-					x = 1
-				elif self.pacman.heading == "west":
-					x = 1
-			elif self.ghost1.yPos < self.pacman.yPos and self.ghost2.yPos == self.pacman.yPos:
-				#move north
-				if self.pacman.heading == "north":
-					x = 0
-				elif self.pacman.heading == "south":
-					x = 1
-				elif self.pacman.heading == "east":
-					x = 1
-				elif self.pacman.heading == "west":
-					x = 1
-			elif self.ghost1.yPos > self.pacman.yPos and self.ghost2.yPos > self.pacman.yPos:
-				#move south
-				if self.pacman.heading == "north":
-					x = 1
-				elif self.pacman.heading == "south":
-					x = 0
-				elif self.pacman.heading == "east":
-					x = 1
-				elif self.pacman.heading == "west":
-					x = 1
-			elif self.ghost1.yPos < self.pacman.yPos and self.ghost2.yPos < self.pacman.yPos:
-				#move north
-				if self.pacman.heading == "north":
-					x = 0
-				elif self.pacman.heading == "south":
-					x = 1
-				elif self.pacman.heading == "east":
-					x = 1
-				elif self.pacman.heading == "west":
-					x = 1
-			elif self.ghost1.yPos > self.pacman.yPos and self.ghost2.yPos < self.pacman.yPos:
-				if (self.ghost1.xPos - self.pacman.xPos) < (xPos - self.ghost2.xPos):
-					#move west
-					if self.pacman.heading == "north":
-						x = 1
-					elif self.pacman.heading == "south":
-						x = 1
-					elif self.pacman.heading == "east":
-						x = 1
-					elif self.pacman.heading == "west":
-						x = 0
-				else:
-					#move east
-					if self.pacman.heading == "north":
-						x = 1
-					elif self.pacman.heading == "south":
-						x = 1
-					elif self.pacman.heading == "east":
-						x = 0
-					elif self.pacman.heading == "west":
-						x = 1
+			
 
 
 	def decideCoordinate(self, command):
@@ -762,8 +463,397 @@ class MyWindow(QMainWindow):
 					self.ghost1.heading = "north"
 
 		elif self.rover == "ghost2":
-			pass
+			if self.ghost2.heading == "north":
+				if command == Command.FORWARD:
+					#if self.left_distance <= 10 and self.right_distance <= 10:
+					#        if self.previous_ghost2_state == ghost2_States[0]:
+					#                self.ghost2.yPos += 1
+					self.ghost2.yPos += 2
+				elif command == Command.STOP_LEFT_FORWARD:
+					self.ghost2.xPos -= 2
+					self.ghost2.heading = "west"
+				elif command == Command.STOP_RIGHT_FORWARD:
+					self.ghost2.xPos += 2
+					self.ghost2.heading = "east"
+			elif self.ghost2.heading == "south":
+				if command == Command.FORWARD:
+					#if self.left_distance <= 10 and self.right_distance <= 10:
+					#        self.ghost2.yPos -= 1
+					#        self.ghost2.yPos -= 1
+					#else:
+					self.ghost2.yPos -= 2
+				elif command == Command.STOP_LEFT_FORWARD:
+					self.ghost2.xPos += 2
+					self.ghost2.heading = "east"
+				elif command == Command.STOP_RIGHT_FORWARD:
+					self.ghost2.xPos -= 2
+					self.ghost2.heading = "west"
+			elif self.ghost2.heading == "east":
+				if command == Command.FORWARD:
+					#if self.left_distance <= 10 and self.right_distance <= 10:
+					#        self.ghost2.xPos += 1
+					#        self.ghost2.xPos += 1
+					#else:
+					self.ghost2.xPos += 2
+				elif command == Command.STOP_LEFT_FORWARD:
+					self.ghost2.yPos += 2
+					self.ghost2.heading = "north"
+				elif command == Command.STOP_RIGHT_FORWARD:
+					self.ghost2.yPos -= 2
+					self.ghost2.heading = "south"
+			elif self.ghost2.heading == "west":
+				if command == Command.FORWARD:
+					#if self.left_distance <= 10 and self.right_distance <= 10:
+					#        self.ghost2.xPos -= 1
+					#        self.ghost2.xPos -= 1
+					#else:
+					self.ghost2.xPos -= 2
+				elif command == Command.STOP_LEFT_FORWARD:
+					self.ghost2.yPos -= 2
+					self.ghost2.heading = "south"
+				elif command == Command.STOP_RIGHT_FORWARD:
+					self.ghost2.yPos += 2
+					self.ghost2.heading = "north"
 
+	def pacManCoords(self, command):
+		if self.pacman.heading == "north":
+			if command == Command.FORWARD:
+				return self.pacman.xPos, (self.pacman.yPos + 2), "north"
+			elif command == Command.STOP_LEFT_FORWARD:
+				return (self.pacman.xPos - 2), self.pacman.yPos, "west"
+			elif command == Command.STOP_RIGHT_FORWARD:
+				return (self.pacman.xPos + 2), self.pacman.yPos, "east"
+		elif self.pacman.heading == "south":
+			if command == Command.FORWARD:
+				return self.pacman.xPos, (self.pacman.yPos - 2), "south"
+			elif command == Command.STOP_LEFT_FORWARD:
+				return (self.pacman.xPos + 2), self.pacman.yPos, "east"
+			elif command == Command.STOP_RIGHT_FORWARD:
+				return self.pacman.xPos - 2, self.pacman.yPos, "west"
+		elif self.pacman.heading == "east":
+			if command == Command.FORWARD:
+				return self.pacman.xPos + 2, self.pacman.yPos, "east"
+			elif command == Command.STOP_LEFT_FORWARD:
+				return self.pacman.xPos, self.pacman.yPos + 2, "north"
+			elif command == Command.STOP_RIGHT_FORWARD:
+					return self.pacman.xPos, self.pacman.yPos - 2, "south"
+		elif self.pacman.heading == "west":
+			if command == Command.FORWARD:
+				return self.pacman.xPos - 2, self.pacman.yPos, "west"
+			elif command == Command.STOP_LEFT_FORWARD:
+				return self.pacman.xPos, (self.pacman.yPos - 2), "south"
+			elif command == Command.STOP_RIGHT_FORWARD:
+				return self.pacman.xPos, (self.pacman.yPos + 2), "north"
+				
+	def ghost1Coords(self, command):
+		if self.ghost1.heading == "north":
+			if command == Command.FORWARD:
+				return self.ghost1.xPos, (self.ghost1.yPos + 2), "north"
+			elif command == Command.STOP_LEFT_FORWARD:
+				return (self.ghost1.xPos - 2), self.ghost1.yPos, "west"
+			elif command == Command.STOP_RIGHT_FORWARD:
+				return (self.ghost1.xPos + 2), self.ghost1.yPos, "east"
+		elif self.ghost1.heading == "south":
+			if command == Command.FORWARD:
+				return self.ghost1.xPos, (self.ghost1.yPos - 2), "south"
+			elif command == Command.STOP_LEFT_FORWARD:
+				return (self.ghost1.xPos + 2), self.ghost1.yPos, "east"
+			elif command == Command.STOP_RIGHT_FORWARD:
+				return self.ghost1.xPos - 2, self.ghost1.yPos, "west"
+		elif self.ghost1.heading == "east":
+			if command == Command.FORWARD:
+				return self.ghost1.xPos + 2, self.ghost1.yPos, "east"
+			elif command == Command.STOP_LEFT_FORWARD:
+				return self.ghost1.xPos, self.ghost1.yPos + 2, "north"
+			elif command == Command.STOP_RIGHT_FORWARD:
+					return self.ghost1.xPos, self.ghost1.yPos - 2, "south"
+		elif self.ghost1.heading == "west":
+			if command == Command.FORWARD:
+				return self.ghost1.xPos - 2, self.ghost1.yPos, "west"
+			elif command == Command.STOP_LEFT_FORWARD:
+				return self.ghost1.xPos, (self.ghost1.yPos - 2), "south"
+			elif command == Command.STOP_RIGHT_FORWARD:
+				return self.ghost1.xPos, (self.ghost1.yPos + 2), "north"
+				
+	def ghost2Coords(self, command):
+		if self.ghost2.heading == "north":
+			if command == Command.FORWARD:
+				return self.ghost2.xPos, (self.ghost2.yPos + 2), "north"
+			elif command == Command.STOP_LEFT_FORWARD:
+				return (self.ghost2.xPos - 2), self.ghost2.yPos, "west"
+			elif command == Command.STOP_RIGHT_FORWARD:
+				return (self.ghost2.xPos + 2), self.ghost2.yPos, "east"
+		elif self.ghost2.heading == "south":
+			if command == Command.FORWARD:
+				return self.ghost2.xPos, (self.ghost2.yPos - 2), "south"
+			elif command == Command.STOP_LEFT_FORWARD:
+				return (self.ghost2.xPos + 2), self.ghost2.yPos, "east"
+			elif command == Command.STOP_RIGHT_FORWARD:
+				return self.ghost2.xPos - 2, self.ghost2.yPos, "west"
+		elif self.ghost2.heading == "east":
+			if command == Command.FORWARD:
+				return self.ghost2.xPos + 2, self.ghost2.yPos, "east"
+			elif command == Command.STOP_LEFT_FORWARD:
+				return self.ghost2.xPos, self.ghost2.yPos + 2, "north"
+			elif command == Command.STOP_RIGHT_FORWARD:
+					return self.ghost2.xPos, self.ghost2.yPos - 2, "south"
+		elif self.ghost2.heading == "west":
+			if command == Command.FORWARD:
+				return self.ghost2.xPos - 2, self.ghost2.yPos, "west"
+			elif command == Command.STOP_LEFT_FORWARD:
+				return self.ghost2.xPos, (self.ghost2.yPos - 2), "south"
+			elif command == Command.STOP_RIGHT_FORWARD:
+				return self.ghost2.xPos, (self.ghost2.yPos + 2), "north"
+				
+	def determine_distance_ghost1(self, x, y):
+		x_dist = 0
+		y_dist = 0
+		if x > self.ghost1.xPos:
+			x_dist = x - self.ghost1.xPos
+		else: 
+			x_dist = self.ghost1.xPos - x
+		if y > self.ghost1.yPos:
+			y_dist = y - self.ghost1.yPos
+		else:
+			y_dist = self.ghost1.yPos - y
+		return x_dist + y_dist
+		
+	def determine_distance_ghost2(self, x, y):
+		x_dist = 0
+		y_dist = 0
+		if x > self.ghost2.xPos:
+			x_dist = x - self.ghost2.xPos
+		else: 
+			x_dist = self.ghost2.xPos - x
+		if y > self.ghost2.yPos:
+			y_dist = y - self.ghost2.yPos
+		else:
+			y_dist = self.ghost2.yPos - y
+		return x_dist + y_dist
+		
+	def determine_distance_pacman(self, x, y):
+		x_dist = 0
+		y_dist = 0
+		if x > self.pacman.xPos:
+			x_dist = x - self.pacman.xPos
+		else: 
+			x_dist = self.pacman.xPos - x
+		if y > self.pacman.yPos:
+			y_dist = y - self.pacman.yPos
+		else:
+			y_dist = self.pacman.yPos - y
+		return x_dist + y_dist
+	
+	def determine_closest_ghost(self):
+		ghost1 = self.determine_distance_ghost1(self.pacman.xPos, self.pacman.yPos)
+		ghost2 = self.determine_distance_ghost2(self.pacman.xPos, self.pacman.yPos)
+		if ghost1 == ghost2:
+			x = randint(0, 1)
+			print("Ghost are equidistant")
+			if x == 0:
+				close = ghost1
+			else:
+				close = ghost2
+		else:
+			close = min([ghost1, ghost2])
+		if close == ghost1:
+			return "ghost1"
+		else:
+			return "ghost2"
+		
+		
+	def pacman_decision(self, possible_moves):
+		if len(possible_moves) == 1:
+			return possible_moves[0]
+		elif len(possible_moves) == 2:
+			move1 = possible_moves[0]
+			move2 = possible_moves[1]
+			x1, y1, heading1 = self.pacManCoords(move1)
+			move1_dist1 = self.determine_distance_ghost1(x1, y1)
+			print("Move1_dist1")
+			print(move1_dist1)
+			move1_dist2 = self.determine_distance_ghost2(x1, y1)
+			x2, y2, heading2 = self.pacManCoords(move2)
+			move2_dist1 = self.determine_distance_ghost1(x2, y2)
+			print("Move2_dist1")
+			print(move2_dist1)
+			move2_dist2 = self.determine_distance_ghost2(x2, y2)
+			closer_ghost = self.determine_closest_ghost()
+			if closer_ghost == "ghost1":
+				print("closest ghost- "),
+				print("ghost1")
+				if move1_dist1 == move2_dist1:
+					print("Moves are Equidistant - Random Move")
+					x = randint(0,1)
+					return possible_moves[x]
+				else:
+					best_dist = max([move1_dist1, move2_dist1])
+					print("Distance - "),
+					print(best_dist)
+					if best_dist == move1_dist1:
+						return move1
+					else:
+						return move2
+			elif closer_ghost == "ghost2":
+				print("closest ghost- "),
+				print("ghost2")
+				if move1_dist2 == move2_dist2:
+					print("Move is Equidistant - Random Move")
+					x = randint(0, 1)
+					return possible_moves[x]
+				else:
+					best_dist = max([move1_dist2, move2_dist2])
+					print("Distance - "),
+					print(best_dist)
+					if best_dist == move1_dist2:
+						return move1
+					else:
+						return move2
+			
+		elif len(possible_moves) == 3:
+			move1 = possible_moves[0]
+			move2 = possible_moves[1]
+			move3 = possible_moves[2]
+			x1, y1, heading1 = self.pacManCoords(move1)
+			move1_dist1 = self.determine_distance_ghost1(x1, y1)
+			move1_dist2 = self.determine_distance_ghost2(x1, y1)
+			x2, y2, heading2 = self.pacManCoords(move2)
+			move2_dist1 = self.determine_distance_ghost1(x2, y2)
+			move2_dist2 = self.determine_distance_ghost2(x2, y2)
+			x3, y3, heading3 = self.pacManCoords(move3)
+			move3_dist1 = self.determine_distance_ghost1(x3, y3)
+			move3_dist2 = self.determine_distance_ghost2(x3, y3)
+			closer_ghost = self.determine_closest_ghost()
+			if closer_ghost == "ghost1":
+				print("closest ghost- ghost 1")
+				if move1_dist1 == move2_dist1 and move1_dist1 == move3_dist1:
+					x = randint(0,2)
+					return possible_moves[x]
+				elif move1_dist1 == move2_dist1 and move3_dist1 < move1_dist1:
+					print("Move1 and Move2 are Equidistance - Random move")
+					x = randint(0, 1)
+					return possible_moves[x]
+				elif move1_dist1 == move3_dist1 and move2_dist1 < move1_dist1:
+					print("Move1 and Move3 are Equidistance - Random move")
+					x = randint(0, 1)
+					if x == 0:
+						return possible_moves[x]
+					else:
+						return possible_moves[2]
+				elif move2_dist1 == move3_dist1 and move1_dist1 < move2_dist1:
+					print("Move2 and Move3 are Equidistance - Random move")
+					x = randint(1, 2)
+					return possible_moves[x]
+				else:	
+					print("best distance - " )
+					print(best_dist)
+					best_dist = max([move1_dist1, move2_dist1, move3_dist1])
+					if best_dist == move1_dist1:
+						return move1
+					elif best_dist == move2_dist1:
+						return move2
+					else:
+						return move3
+			elif closer_ghost == "ghost2":
+				print("closest ghost - ghost2")
+				if move1_dist2 == move2_dist2 and move1_dist2 == move3_dist2:
+					print("Moves are Equidistant - Random Move")
+					x = randint(0,2)
+					return possible_moves[x]
+				elif move1_dist2 == move2_dist2 and move3_dist2 < move1_dist2:
+					print("Move1 and Move2 are equidistant - random move")
+					x = randint(0, 1)
+					return possible_moves[x]
+				elif move1_dist2 == move3_dist2 and move2_dist2 < move1_dist2:
+					print("Move1 and Move3 are equidistant - random move")
+					x = randint(0, 1)
+					if x == 0:
+						return possible_moves[x]
+					else:
+						return possible_moves[2]
+				elif move2_dist2 == move3_dist2 and move1_dist < move2_dist2:
+					print("Move2 and move3 are equidistant - random move")
+					x = randint(1, 2)
+					return possible_moves[x]
+				else:	
+					best_dist = max([move1_dist2, move2_dist2, move3_dist2])
+					print("best distance - ")
+					print(best_dist) 
+					if best_dist == move1_dist2:
+						return move1
+					elif best_dist == move2_dist2:
+						return move2
+					else:
+						return move3
+				
+	def ghost1_decision(self, possible_moves):
+		if len(possible_moves) == 1:
+			return possible_moves[0]
+		elif len(possible_moves) == 2:
+			move1 = possible_moves[0]
+			move2 = possible_moves[1]
+			x1, y1, heading1 = self.ghost1Coords(move1)
+			move1_dist = self.determine_distance_pacman(x1, y1)
+			x2, y2, heading2 = self.ghost1Coords(move2)
+			move2_dist = self.determine_distance_pacman(x2, y2)
+			best_dist = min([move1_dist, move2_dist])
+			if best_dist == move1_dist:
+				return move1
+			elif best_dist == move2_dist:
+				return move2
+		elif len(possible_moves) == 3:
+			move1 = possible_moves[0]
+			move2 = possible_moves[1]
+			move3 = possible_moves[2]
+			x1, y1, heading1 = self.ghost1Coords(move1)
+			move1_dist = self.determine_distance_pacman(x1, y1)
+			x2, y2, heading2 = self.ghost1Coords(move2)
+			move2_dist = self.determine_distance_pacman(x2, y2)
+			x3, y3, heading3 = self.ghost1Coords(move3)
+			move3_dist = self.determine_distance_pacman(x3, y3)
+			best_dist = min([move1_dist, move2_dist, move3_dist])
+			if best_dist == move1_dist:
+				return move1
+			elif best_dist == move2_dist:
+				return move2
+			elif best_dist == move3_dist:
+				return move3
+				
+	def ghost2_decision(self, possible_moves):
+		if len(possible_moves) == 1:
+			return possible_moves[0]
+		elif len(possible_moves) == 2:
+			move1 = possible_moves[0]
+			move2 = possible_moves[1]
+			x1, y1, heading1 = self.ghost2Coords(move1)
+			move1_dist = self.determine_distance_pacman(x1, y1)
+			x2, y2, heading2 = self.ghost2Coords(move2)
+			move2_dist = self.determine_distance_pacman(x2, y2)
+			best_dist = min([move1_dist, move2_dist])
+			if best_dist == move1_dist:
+				return move1
+			elif best_dist == move2_dist:
+				return move2
+		elif len(possible_moves) == 3:
+			move1 = possible_moves[0]
+			move2 = possible_moves[1]
+			move3 = possible_moves[2]
+			x1, y1, heading1 = self.ghost2Coords(move1)
+			move1_dist = self.determine_distance_pacman(x1, y1)
+			x2, y2, heading2 = self.ghost2Coords(move2)
+			move2_dist = self.determine_distance_pacman(x2, y2)
+			x3, y3, heading3 = self.ghost2Coords(move3)
+			move3_dist = self.determine_distance_pacman(x3, y3)
+			best_dist = min([move1_dist, move2_dist, move3_dist])
+			if best_dist == move1_dist:
+				return move1
+			elif best_dist == move2_dist:
+				return move2
+			elif best_dist == move3_dist:
+				return move3
+				
+	def printCoords(self):
+		print("Pacman headed toward ({}, {})".format(self.pacman.xPos, self.pacman.yPos))
 
 	def newCommand(self):
 		pacIP = "192.168.1.103"
@@ -775,142 +865,128 @@ class MyWindow(QMainWindow):
 
 		if self.rover == "pacman":
 			if self.pacman.irState == "01":  # Forward open, left blocked, right blocked
-				self.decideCommandAI(x)
-			if self.pacman.irState == "02":  # Forward open, left open, right open
+				pass  # Make sure to put a check for game over condition here
+			elif self.pacman.irState == "02":  # Forward open, left open, right open
 				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
 				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
-					self.decideCommandAI(x)
-					choice = commands[x]
+					choice = self.pacman_decision(commands)
 					self.decideCoordinate(choice)
+					self.printCoords()
 					self.sendCommand.emit(choice, pacIP)
 					self.score += 1
-			if self.pacman.irState == "03":  # Forward blocked, left open, right open
+			elif self.pacman.irState == "03":  # Forward blocked, left open, right open
 				commands = [Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
 				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
-					self.decideCommandAI(x)
-					choice = commands[x]
+					choice = self.pacman_decision(commands)
 					self.decideCoordinate(choice)
+					self.printCoords()
 					self.sendCommand.emit(choice, pacIP)
 					self.score += 1
-			if self.pacman.irState == "04":  # Forward blocked, left open, right blocked
+			elif self.pacman.irState == "04":  # Forward blocked, left open, right blocked
 				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
-					self.decideCommandAI(x)
 					self.decideCoordinate(Command.STOP_LEFT_FORWARD)
+					self.printCoords()
 					self.sendCommand.emit(Command.STOP_LEFT_FORWARD, pacIP)
 					self.score += 1
-			if self.pacman.irState == "05":  # Forward blocked, left blocked, right open
+			elif self.pacman.irState == "05":  # Forward blocked, left blocked, right open
 				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
-					self.decideCommandAI(x)
 					self.decideCoordinate(Command.STOP_RIGHT_FORWARD)
+					self.printCoords()
 					self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, pacIP)
 					self.score += 1
-			if self.pacman.irState == "06":  # Forward open, left open, right blocked
+			elif self.pacman.irState == "06":  # Forward open, left open, right blocked
 				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD]
 				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
-					self.decideCommandAI(x)
-					choice = commands[x]
+					choice = self.pacman_decision(commands)
 					self.decideCoordinate(choice)
+					self.printCoords()
 					self.sendCommand.emit(choice, pacIP)
 					self.score += 1
-			if self.pacman.irState == "07":  # Forward open, left blocked, right open
+			elif self.pacman.irState == "07":  # Forward open, left blocked, right open
 				commands = [Command.FORWARD, Command.STOP_RIGHT_FORWARD]
 				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
-					self.decideCommandAI(x)
-					choice = commands[x]
+					choice = self.pacman_decision(commands)
 					self.decideCoordinate(choice)
+					self.printCoords()
 					self.sendCommand.emit(choice, pacIP)
 					self.score += 1
 			self.pacman.prevState = self.pacman.irState
-			self.scoreChanged.emit(self.score)
+			self.scoreChanged.emit(str(self.score))
 
 		if self.rover == "ghost1":
 			if self.ghost1.irState == "01":  # Forward open, left blocked, right blocked
-				self.decideCommandAI(x)
+				pass
 			if self.ghost1.irState == "02":  # Forward open, left open, right open
 				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
 				if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
-					self.decideCommandAI(x)
-					x = randint(0, 2)
-					choice = commands[x]
+					choice = self.ghost1_decision(commands)
 					self.decideCoordinate(choice)
 					self.sendCommand.emit(choice, ghost1IP)
 			if self.ghost1.irState == "03":  # Forward blocked, left open, right open
 				commands = [Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
 				if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
-					self.decideCommandAI(x)
-					x = randint(0, 1)
-					choice = commands[x]
+					choice = self.ghost1_decision(commands)
 					self.decideCoordinate(choice)
 					self.sendCommand.emit(choice, ghost1IP)
 			if self.ghost1.irState == "04":  # Forward blocked, left open, right blocked
 				if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
-					self.decideCommandAI(x)
 					self.decideCoordinate(Command.STOP_LEFT_FORWARD)
 					self.sendCommand.emit(Command.STOP_LEFT_FORWARD, ghost1IP)
 			if self.ghost1.irState == "05":  # Forward blocked, left blocked, right open
 				if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
-					self.decideCommandAI(x)
 					self.decideCoordinate(Command.STOP_RIGHT_FORWARD)
 					self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, ghost1IP)
 			if self.ghost1.irState == "06":  # Forward open, left open, right blocked
 				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD]
 				if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
-					self.decideCommandAI(x)
-					x = randint(0, 1)
-					choice = commands[x]
+					choice = self.ghost1_decision(commands)
 					self.decideCoordinate(choice)
 					self.sendCommand.emit(choice, ghost1IP)
 			if self.ghost1.irState == "07":  # Forward open, left blocked, right open
 				commands = [Command.FORWARD, Command.STOP_RIGHT_FORWARD]
 				if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
-					self.decideCommandAI(x)
-					x = randint(0, 1)
-					choice = commands[x]
+					choice = self.ghost1_decision(commands)
 					self.decideCoordinate(choice)
 					self.sendCommand.emit(choice, ghost1IP)
 			self.ghost1.prevState = self.ghost1.irState
 
 		if self.rover == "ghost2":
 			if self.ghost2.irState == "01":  # Forward open, left blocked, right blocked
-				self.decideCommandAI(x)
+				pass
 			if self.ghost2.irState == "02":  # Forward open, left open, right open
 				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
 				if self.ghost2.prevState == "01" or self.ghost2.prevState == "00":
-					self.decideCommandAI(x)
-					choice = commands[x]
+					choice = self.ghost2_decision(commands)
 					self.decideCoordinate(choice)
-					self.sendCommand.emit(choice, pacIP)
+					self.sendCommand.emit(choice, ghost2IP)
 			if self.ghost2.irState == "03":  # Forward blocked, left open, right open
 				commands = [Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
 				if self.ghost2.prevState == "01" or self.ghost2.prevState == "00":
-					self.decideCommandAI(x)
-					choice = commands[x]
+					choice = self.ghost2_decision(commands)
 					self.decideCoordinate(choice)
-					self.sendCommand.emit(choice, pacIP)
+					self.sendCommand.emit(choice, ghost2IP)
 			if self.ghost2.irState == "04":  # Forward blocked, left open, right blocked
 				if self.ghost2.prevState == "01" or self.ghost2.prevState == "00":
-					self.decideCommandAI(x)
+					
 					self.decideCoordinate(Command.STOP_LEFT_FORWARD)
 					self.sendCommand.emit(Command.STOP_LEFT_FORWARD, pacIP)
 			if self.ghost2.irState == "05":  # Forward blocked, left blocked, right open
 				if self.ghost2.prevState == "01" or self.ghost2.prevState == "00":
-					self.decideCommandAI(x)
+					
 					self.decideCoordinate(Command.STOP_RIGHT_FORWARD)
 					self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, pacIP)
 			if self.ghost2.irState == "06":  # Forward open, left open, right blocked
 				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD]
 				if self.ghost2.prevState == "01" or self.ghost2.prevState == "00":
-					self.decideCommandAI(x)
-					choice = commands[x]
+					choice = self.ghost2_decision(commands)
 					self.decideCoordinate(choice)
-					self.sendCommand.emit(choice, pacIP)
+					self.sendCommand.emit(choice, ghost2IP)
 			if self.ghost2.irState == "07":  # Forward open, left blocked, right open
 				commands = [Command.FORWARD, Command.STOP_RIGHT_FORWARD]
 				if self.ghost2.prevState == "01" or self.ghost2.prevState == "00":
-					self.decideCommandAI(x)
-					choice = commands[x]
+					choice = self.ghost2_decision(commands)
 					self.decideCoordinate(choice)
-					self.sendCommand.emit(choice, pacIP)
+					self.sendCommand.emit(choice, ghost2IP)
 			self.ghost2.prevState = self.ghost2.irState
 
 
