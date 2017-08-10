@@ -6,11 +6,12 @@ import time
 import numpy
 from enum import Enum
 from random import *
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QLabel, QPushButton
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QLabel, QPushButton, QDialog
 from PyQt5.QtNetwork import QTcpServer, QTcpSocket, QAbstractSocket, QHostAddress
 from PyQt5.QtCore import QObject, QThread, QReadWriteLock, QDataStream, Qt, pyqtSignal, pyqtSlot
 from PyQt5.QtGui import QPixmap, QFont
 from ui_mainwindow import Ui_PacMan
+from popup import Ui_Dialog
 
 
 class Command(Enum):
@@ -181,6 +182,8 @@ class MyWindow(QMainWindow):
 		self.stateChanged.emit(self.serverState)
 		self.ui = Ui_PacMan()
 		self.ui.setupUi(self)
+		form = QDialog()
+		self.popup = Ui_Dialog()
 		self.ui.stopButton.setEnabled(False)
 		self.ui.automaticButton.setEnabled(False)
 		self.ui.overrideButton.setEnabled(False)
@@ -213,6 +216,8 @@ class MyWindow(QMainWindow):
 
 		self.serverState = "Stopped"
 		self.stateChanged.emit(self.serverState)
+		self.popup.setupUi(form)
+		form.exec_()
 
 	def startServer(self):
 		self.ui.stopButton.setEnabled(True)
