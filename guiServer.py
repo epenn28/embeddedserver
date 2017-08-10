@@ -3,7 +3,6 @@ import socket
 import threading
 import binascii
 import time
-import numpy
 from enum import Enum
 from random import *
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QLabel, QPushButton, QDialog
@@ -28,6 +27,7 @@ class Command(Enum):
 	MANUAL_RIGHT = 10
 	PAUSE = 11
 	GAME_OVER = 12
+	TURN_AROUND = 13
 
 class Values:
 	front = None
@@ -81,6 +81,8 @@ class Worker(QObject):
 				value = "A".rjust(2, '0').encode()
 			elif command == Command.GAME_OVER:
 				value = "C".rjust(2, '0').encode()
+			elif command == Command.TURN_AROUND:
+				value = "D".rjust(2, '0').encode()
 			else:
 				value = str(command.value).rjust(2, '0').encode()
 			data = binascii.unhexlify(header + value + footer)
@@ -165,15 +167,17 @@ class MyWindow(QMainWindow):
 		self.pacman = Values()
 		self.ghost1 = Values()
 		self.ghost2 = Values()
-		self.pacman.xPos = 2
+		"""
+		self.pacman.xPos = 4
 		self.pacman.yPos = 2
 		self.pacman.heading = "west"
-		self.ghost1.xPos = 6
-		self.ghost1.yPos = 4
-		self.ghost1.heading = "east"
-		self.ghost2.xPos = 6
-		self.ghost2.yPos = 0
-		self.ghost2.heading = "east"
+		self.ghost1.xPos = 0
+		self.ghost1.yPos = 0
+		self.ghost1.heading = "west"
+		self.ghost2.xPos = 0
+		self.ghost2.yPos = 4
+		self.ghost2.heading = "west"
+		"""
 		self.manual = True
 		self.score = 0
 
@@ -182,8 +186,6 @@ class MyWindow(QMainWindow):
 		self.stateChanged.emit(self.serverState)
 		self.ui = Ui_PacMan()
 		self.ui.setupUi(self)
-		form = QDialog()
-		self.popup = Ui_Dialog()
 		self.ui.stopButton.setEnabled(False)
 		self.ui.automaticButton.setEnabled(False)
 		self.ui.overrideButton.setEnabled(False)
@@ -216,8 +218,47 @@ class MyWindow(QMainWindow):
 
 		self.serverState = "Stopped"
 		self.stateChanged.emit(self.serverState)
-		self.popup.setupUi(form)
-		form.exec_()
+		
+		self.setupPopup()
+
+	def setupPopup(self):
+		self.form = QDialog()
+		self.popup = Ui_Dialog()
+		self.popup.setupUi(self.form)
+		self.popup.defaultButton.pressed.connect(self.form.reject)
+		self.popup.okButton.pressed.connect(self.form.accept)
+		self.popup.resetButton.pressed.connect(self.reset)
+		if self.form.exec_():  # Use values entered
+			self.pacman.xPos = int(self.popup.pacmanXComboVal.currentText())
+			self.pacman.yPos = int(self.popup.pacmanYComboVal.currentText())
+			self.pacman.heading = self.popup.pacmanHeadingComboVal.currentText()
+			self.ghost1.xPos = int(self.popup.ghost1XComboVal.currentText())
+			self.ghost1.yPos = int(self.popup.ghost1YComboVal.currentText())
+			self.ghost1.heading = self.popup.ghost1HeadingComboVal.currentText()
+			self.ghost2.xPos = int(self.popup.ghost2XComboVal.currentText())
+			self.ghost2.yPos = int(self.popup.ghost2YComboVal.currentText())
+			self.ghost2.heading = self.popup.ghost2HeadingComboVal.currentText()
+		else:  # Use default values
+			self.pacman.xPos = 2
+			self.pacman.yPos = 2
+			self.pacman.heading = "west"
+			self.ghost1.xPos = 6
+			self.ghost1.yPos = 0
+			self.ghost1.heading = "east"
+			self.ghost2.xPos = 6
+			self.ghost2.yPos = 4
+			self.ghost2.heading = "east"
+
+	def reset(self):
+		self.popup.pacmanXComboVal.setCurrentIndex(0)
+		self.popup.pacmanYComboVal.setCurrentIndex(0)
+		self.popup.pacmanHeadingComboVal.setCurrentIndex(0)
+		self.popup.ghost1XComboVal.setCurrentIndex(0)
+		self.popup.ghost1YComboVal.setCurrentIndex(0)
+		self.popup.ghost1HeadingComboVal.setCurrentIndex(0)
+		self.popup.ghost2XComboVal.setCurrentIndex(0)
+		self.popup.ghost2YComboVal.setCurrentIndex(0)
+		self.popup.ghost2HeadingComboVal.setCurrentIndex(0)
 
 	def startServer(self):
 		self.ui.stopButton.setEnabled(True)
@@ -353,9 +394,6 @@ class MyWindow(QMainWindow):
 		if self.rover == "pacman":
 			if self.pacman.heading == "north":
 				if command == Command.FORWARD:
-					#if self.left_distance <= 10 and self.right_distance <= 10:
-					#        if self.previous_pacman_state == Pacman_States[0]:
-					#                self.pacman.yPos += 1
 					self.pacman.yPos += 2
 				elif command == Command.STOP_LEFT_FORWARD:
 					self.pacman.xPos -= 2
@@ -365,10 +403,6 @@ class MyWindow(QMainWindow):
 					self.pacman.heading = "east"
 			elif self.pacman.heading == "south":
 				if command == Command.FORWARD:
-					#if self.left_distance <= 10 and self.right_distance <= 10:
-					#        self.pacman.yPos -= 1
-					#        self.pacman.yPos -= 1
-					#else:
 					self.pacman.yPos -= 2
 				elif command == Command.STOP_LEFT_FORWARD:
 					self.pacman.xPos += 2
@@ -378,10 +412,6 @@ class MyWindow(QMainWindow):
 					self.pacman.heading = "west"
 			elif self.pacman.heading == "east":
 				if command == Command.FORWARD:
-					#if self.left_distance <= 10 and self.right_distance <= 10:
-					#        self.pacman.xPos += 1
-					#        self.pacman.xPos += 1
-					#else:
 					self.pacman.xPos += 2
 				elif command == Command.STOP_LEFT_FORWARD:
 					self.pacman.yPos += 2
@@ -391,10 +421,6 @@ class MyWindow(QMainWindow):
 					self.pacman.heading = "south"
 			elif self.pacman.heading == "west":
 				if command == Command.FORWARD:
-					#if self.left_distance <= 10 and self.right_distance <= 10:
-					#        self.pacman.xPos -= 1
-					#        self.pacman.xPos -= 1
-					#else:
 					self.pacman.xPos -= 2
 				elif command == Command.STOP_LEFT_FORWARD:
 					self.pacman.yPos -= 2
@@ -402,13 +428,10 @@ class MyWindow(QMainWindow):
 				elif command == Command.STOP_RIGHT_FORWARD:
 					self.pacman.yPos += 2
 					self.pacman.heading = "north"
-
+				
 		elif self.rover == "ghost1":
 			if self.ghost1.heading == "north":
 				if command == Command.FORWARD:
-					#if self.left_distance <= 10 and self.right_distance <= 10:
-					#        if self.previous_ghost1_state == ghost1_States[0]:
-					#                self.ghost1.yPos += 1
 					self.ghost1.yPos += 2
 				elif command == Command.STOP_LEFT_FORWARD:
 					self.ghost1.xPos -= 2
@@ -416,12 +439,11 @@ class MyWindow(QMainWindow):
 				elif command == Command.STOP_RIGHT_FORWARD:
 					self.ghost1.xPos += 2
 					self.ghost1.heading = "east"
+				elif command == Command.TURN_AROUND:
+					self.ghost1.yPos -= 2
+					self.ghost1.heading = "south"
 			elif self.ghost1.heading == "south":
 				if command == Command.FORWARD:
-					#if self.left_distance <= 10 and self.right_distance <= 10:
-					#        self.ghost1.yPos -= 1
-					#        self.ghost1.yPos -= 1
-					#else:
 					self.ghost1.yPos -= 2
 				elif command == Command.STOP_LEFT_FORWARD:
 					self.ghost1.xPos += 2
@@ -429,12 +451,11 @@ class MyWindow(QMainWindow):
 				elif command == Command.STOP_RIGHT_FORWARD:
 					self.ghost1.xPos -= 2
 					self.ghost1.heading = "west"
+				elif command == Command.TURN_AROUND:
+					self.ghost2.yPos += 2
+					self.ghost1.heading = "north"
 			elif self.ghost1.heading == "east":
 				if command == Command.FORWARD:
-					#if self.left_distance <= 10 and self.right_distance <= 10:
-					#        self.ghost1.xPos += 1
-					#        self.ghost1.xPos += 1
-					#else:
 					self.ghost1.xPos += 2
 				elif command == Command.STOP_LEFT_FORWARD:
 					self.ghost1.yPos += 2
@@ -442,12 +463,11 @@ class MyWindow(QMainWindow):
 				elif command == Command.STOP_RIGHT_FORWARD:
 					self.ghost1.yPos -= 2
 					self.ghost1.heading = "south"
+				elif command == Command.TURN_AROUND:
+					self.ghost1.xPos -= 2
+					self.ghost1.headiing = "west"
 			elif self.ghost1.heading == "west":
 				if command == Command.FORWARD:
-					#if self.left_distance <= 10 and self.right_distance <= 10:
-					#        self.ghost1.xPos -= 1
-					#        self.ghost1.xPos -= 1
-					#else:
 					self.ghost1.xPos -= 2
 				elif command == Command.STOP_LEFT_FORWARD:
 					self.ghost1.yPos -= 2
@@ -455,13 +475,13 @@ class MyWindow(QMainWindow):
 				elif command == Command.STOP_RIGHT_FORWARD:
 					self.ghost1.yPos += 2
 					self.ghost1.heading = "north"
+				elif command == Command.TURN_AROUND:
+					self.ghost1.xPos += 2
+					self.ghost1.heading = "east"
 
 		elif self.rover == "ghost2":
 			if self.ghost2.heading == "north":
 				if command == Command.FORWARD:
-					#if self.left_distance <= 10 and self.right_distance <= 10:
-					#        if self.previous_ghost2_state == ghost2_States[0]:
-					#                self.ghost2.yPos += 1
 					self.ghost2.yPos += 2
 				elif command == Command.STOP_LEFT_FORWARD:
 					self.ghost2.xPos -= 2
@@ -469,12 +489,11 @@ class MyWindow(QMainWindow):
 				elif command == Command.STOP_RIGHT_FORWARD:
 					self.ghost2.xPos += 2
 					self.ghost2.heading = "east"
+				elif command == Command.TURN_AROUND:
+					self.ghost2.yPos -= 2
+					self.ghost2.heading = "south"
 			elif self.ghost2.heading == "south":
 				if command == Command.FORWARD:
-					#if self.left_distance <= 10 and self.right_distance <= 10:
-					#        self.ghost2.yPos -= 1
-					#        self.ghost2.yPos -= 1
-					#else:
 					self.ghost2.yPos -= 2
 				elif command == Command.STOP_LEFT_FORWARD:
 					self.ghost2.xPos += 2
@@ -482,12 +501,11 @@ class MyWindow(QMainWindow):
 				elif command == Command.STOP_RIGHT_FORWARD:
 					self.ghost2.xPos -= 2
 					self.ghost2.heading = "west"
+				elif command == Command.TURN_AROUND:
+					self.ghost2.yPos += 2
+					self.ghost2.heading = "north"
 			elif self.ghost2.heading == "east":
 				if command == Command.FORWARD:
-					#if self.left_distance <= 10 and self.right_distance <= 10:
-					#        self.ghost2.xPos += 1
-					#        self.ghost2.xPos += 1
-					#else:
 					self.ghost2.xPos += 2
 				elif command == Command.STOP_LEFT_FORWARD:
 					self.ghost2.yPos += 2
@@ -495,12 +513,11 @@ class MyWindow(QMainWindow):
 				elif command == Command.STOP_RIGHT_FORWARD:
 					self.ghost2.yPos -= 2
 					self.ghost2.heading = "south"
+				elif command == Command.TURN_AROUND:
+					self.ghost2.xPos -= 2
+					self.ghost2.heading = "west"
 			elif self.ghost2.heading == "west":
 				if command == Command.FORWARD:
-					#if self.left_distance <= 10 and self.right_distance <= 10:
-					#        self.ghost2.xPos -= 1
-					#        self.ghost2.xPos -= 1
-					#else:
 					self.ghost2.xPos -= 2
 				elif command == Command.STOP_LEFT_FORWARD:
 					self.ghost2.yPos -= 2
@@ -508,6 +525,9 @@ class MyWindow(QMainWindow):
 				elif command == Command.STOP_RIGHT_FORWARD:
 					self.ghost2.yPos += 2
 					self.ghost2.heading = "north"
+				elif command == Command.TURN_AROUND:
+					self.ghost2.xPos += 2
+					self.ghost2.heading = "east"
 
 	def pacManCoords(self, command):
 		if self.pacman.heading == "north":
@@ -997,14 +1017,26 @@ class MyWindow(QMainWindow):
 					self.sendCommand.emit(choice, ghost1IP)
 			if self.ghost1.irState == "04":  # Forward blocked, left open, right blocked
 				if self.ghost1.prevState == "01":
-					self.decideCoordinate(Command.STOP_LEFT_FORWARD)
-					self.printGhost1Coords()
-					self.sendCommand.emit(Command.STOP_LEFT_FORWARD, ghost1IP)
+					next_x_coords, next_y_coords, next_heading = self.ghost1Coords(Command.STOP_LEFT_FORWARD)
+					if (next_x_coords, next_y_coords) == (self.ghost2.xPos, self.ghost2.yPos):
+						self.decideCoordinate(Command.TURN_AROUND)
+						self.printGhost1Coords()
+						self.sendCommand.emit(Command.TURN_AROUND, ghost1IP)
+					else:
+						self.decideCoordinate(Command.STOP_LEFT_FORWARD)
+						self.printGhost1Coords()
+						self.sendCommand.emit(Command.STOP_LEFT_FORWARD, ghost1IP)
 			if self.ghost1.irState == "05":  # Forward blocked, left blocked, right open
 				if self.ghost1.prevState == "01":
-					self.decideCoordinate(Command.STOP_RIGHT_FORWARD)
-					self.printGhost1Coords()
-					self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, ghost1IP)
+					next_x_coords, next_y_coords, next_heading = self.ghost1Coords(Command.STOP_RIGHT_FORWARD)
+					if (next_x_coords, next_y_coords) == (self.ghost2.xPos, self.ghost2.yPos):
+						self.decideCoordinate(Command.TURN_AROUND)
+						self.printGhost1Coords()
+						self.sendCommand.emit(Command.TURN_AROUND, ghost1IP)
+					else:
+						self.decideCoordinate(Command.STOP_RIGHT_FORWARD)
+						self.printGhost1Coords()
+						self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, ghost1IP)
 			if self.ghost1.irState == "06":  # Forward open, left open, right blocked
 				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD]
 				if self.ghost1.prevState == "01":
@@ -1040,14 +1072,26 @@ class MyWindow(QMainWindow):
 					self.sendCommand.emit(choice, ghost2IP)
 			if self.ghost2.irState == "04":  # Forward blocked, left open, right blocked
 				if self.ghost2.prevState == "01":
-					self.decideCoordinate(Command.STOP_LEFT_FORWARD)
-					self.printGhost2Coords()
-					self.sendCommand.emit(Command.STOP_LEFT_FORWARD, ghost2IP)
+					next_x_coords, next_y_coords, next_heading = self.ghost2Coords(Command.STOP_LEFT_FORWARD)
+					if (next_x_coords, next_y_coords) == (self.ghost1.xPos, self.ghost1.yPos):
+						self.decideCoordinate(Command.TURN_AROUND)
+						self.printGhost2Coords()
+						self.sendCommand.emit(Command.TURN_AROUND, ghost2IP)
+					else:
+						self.decideCoordinate(Command.STOP_LEFT_FORWARD)
+						self.printGhost2Coords()
+						self.sendCommand.emit(Command.STOP_LEFT_FORWARD, ghost2IP)
 			if self.ghost2.irState == "05":  # Forward blocked, left blocked, right open
 				if self.ghost2.prevState == "01":
-					self.decideCoordinate(Command.STOP_RIGHT_FORWARD)
-					self.printGhost2Coords()
-					self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, ghost2IP)
+					next_x_coords, next_y_coords, next_heading = self.ghost2Coords(Command.STOP_RIGHT_FORWARD)
+					if (next_x_coords, next_y_coords) == (self.ghost1.xPos, self.ghost1.yPos):
+						self.decideCoordinate(Command.TURN_AROUND)
+						self.printGhost2Coords()
+						self.sendCommand.emit(Command.TURN_AROUND, ghost2IP)
+					else:
+						self.decideCoordinate(Command.STOP_RIGHT_FORWARD)
+						self.printGhost2Coords()
+						self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, ghost2IP)
 			if self.ghost2.irState == "06":  # Forward open, left open, right blocked
 				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD]
 				if self.ghost2.prevState == "01":
