@@ -8,11 +8,10 @@ from enum import Enum
 from random import *
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QLabel, QPushButton
 from PyQt5.QtNetwork import QTcpServer, QTcpSocket, QAbstractSocket, QHostAddress
-from PyQt5.QtCore import QObject, QThread, QReadWriteLock, QDataStream, pyqtSignal, pyqtSlot
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtCore import QObject, QThread, QReadWriteLock, QDataStream, Qt, pyqtSignal, pyqtSlot
+from PyQt5.QtGui import QPixmap, QFont
 from ui_mainwindow import Ui_PacMan
 
-LOCALTESTING = False
 
 class Command(Enum):
 	FORWARD = 0
@@ -27,6 +26,7 @@ class Command(Enum):
 	MANUAL_LEFT = 9
 	MANUAL_RIGHT = 10
 	PAUSE = 11
+	GAME_OVER = 12
 
 class Values:
 	front = None
@@ -78,6 +78,8 @@ class Worker(QObject):
 				value = str(5).rjust(2, '0').encode()
 			elif command == Command.MANUAL_RIGHT:
 				value = "A".rjust(2, '0').encode()
+			elif command == Command.GAME_OVER:
+				value = "C".rjust(2, '0').encode()
 			else:
 				value = str(command.value).rjust(2, '0').encode()
 			data = binascii.unhexlify(header + value + footer)
@@ -162,15 +164,15 @@ class MyWindow(QMainWindow):
 		self.pacman = Values()
 		self.ghost1 = Values()
 		self.ghost2 = Values()
-		self.pacman.xPos = 4
-		self.pacman.yPos = 4
-		self.pacman.heading = "north"
-		self.ghost1.xPos = 0
-		self.ghost1.yPos = 2
-		self.ghost1.heading = "north"
-		self.ghost2.xPos = 8
-		self.ghost2.yPos = 2
-		self.ghost2.heading = "south"
+		self.pacman.xPos = 2
+		self.pacman.yPos = 2
+		self.pacman.heading = "west"
+		self.ghost1.xPos = 6
+		self.ghost1.yPos = 4
+		self.ghost1.heading = "east"
+		self.ghost2.xPos = 6
+		self.ghost2.yPos = 0
+		self.ghost2.heading = "east"
 		self.manual = True
 		self.score = 0
 
@@ -180,6 +182,8 @@ class MyWindow(QMainWindow):
 		self.ui = Ui_PacMan()
 		self.ui.setupUi(self)
 		self.ui.stopButton.setEnabled(False)
+		self.ui.automaticButton.setEnabled(False)
+		self.ui.overrideButton.setEnabled(False)
 		#self.ui.automaticButton.setEnabled(False)
 		self.buttons = self.ui.manualTab.findChildren(QPushButton)
 		for button in self.buttons:
@@ -197,6 +201,10 @@ class MyWindow(QMainWindow):
 		self.ui.stopButton.clicked.connect(self.stopServer)
 		self.ui.automaticButton.clicked.connect(self.autoMode)
 		self.ui.overrideButton.clicked.connect(self.manualMode)
+		self.ui.scoreValue.setTextFormat(Qt.RichText)
+		f = self.ui.scoreValue.font()
+		f.setPointSize(20)
+		self.ui.scoreValue.setFont(f)
 		self.stateChanged.connect(self.ui.statusValue.setText)
 
 		self.server.dataOut.connect(self.calculateNextCommand)
@@ -209,6 +217,8 @@ class MyWindow(QMainWindow):
 	def startServer(self):
 		self.ui.stopButton.setEnabled(True)
 		self.ui.startButton.setEnabled(False)
+		self.ui.automaticButton.setEnabled(True)
+		self.ui.overrideButton.setEnabled(True)
 		self.serverState = "Started"
 		self.stateChanged.emit(self.serverState)
 		if not self.server.listen(QHostAddress("0.0.0.0"), port_num):
@@ -219,6 +229,8 @@ class MyWindow(QMainWindow):
 	def stopServer(self):
 		self.ui.stopButton.setEnabled(False)
 		self.ui.startButton.setEnabled(True)
+		self.ui.automaticButton.setEnabled(False)
+		self.ui.overrideButton.setEnabled(False)
 		self.serverState = "Stopped"
 		self.stateChanged.emit(self.serverState)
 		self.server.closeServer()
@@ -286,57 +298,36 @@ class MyWindow(QMainWindow):
 		self.ghost1.prevState = self.ghost1.irState
 		self.ghost2.prevState = self.ghost2.irState
 
-
 	def calculateNextCommand(self, data, address):
-		global LOCALTESTING
 		output = binascii.hexlify(data)
 		header, source, values, footer = output[:2], int(output[2:4], 16), output[4:14], output[14:]
 
-		if LOCALTESTING:
-			if address in self.listOfAddresses:
-				self.whichRover = self.listOfAddresses.index(address)
-			else:
-				self.listOfAddresses.append(address)
+		newVal = str(int(values[:2], 16)).rjust(2, '0')
+		newVal2 = str(int(values[2:4], 16)).rjust(2, '0')
+		newVal3 = str(int(values[4:6], 16)).rjust(2, '0')
+		newVal4 = str(int(values[6:8], 16)).rjust(2, '0')
+		newVal5 = str(int(values[8:10], 16)).rjust(2, '0')
 
-			if self.whichRover == 0:
-				self.rover = "pacman"
-			elif self.whichRover == 1:
-				self.rover = "ghost1"
-			elif self.whichRover == 2:
-				self.rover = "ghost2"
-			else:
-				self.rover = "pacman"
+		values = ''.join((newVal, newVal2, newVal3, newVal4, newVal5))
 
+		if "103" in address:
+			self.rover = "pacman"
+		elif "104" in address:
+			self.rover = "ghost1"
+		elif "105" in address:
+			self.rover = "ghost2"
 		else:
-			newVal = str(int(values[:2], 16)).rjust(2, '0')
-			newVal2 = str(int(values[2:4], 16)).rjust(2, '0')
-			newVal3 = str(int(values[4:6], 16)).rjust(2, '0')
-			newVal4 = str(int(values[6:8], 16)).rjust(2, '0')
-			newVal5 = str(int(values[8:10], 16)).rjust(2, '0')
-
-			values = ''.join((newVal, newVal2, newVal3, newVal4, newVal5))
-
-			if "103" in address:
-				self.rover = "pacman"
-			elif "104" in address:
-				self.rover = "ghost1"
-			elif "105" in address:
-				self.rover = "ghost2"
-			else:
-				self.rover = "pacman"
+			self.rover = "pacman"
 
 		self.ip = address
-
-		# check header
-
+		
 		if source == 0:  # sensors
 			self.front, self.left, self.right, self.irState, self.lfState = values[:2], values[2:4], values[4:6], values[6:8], values[8:10]
 			self.updateValues()
 			self.newCommand()
+			self.game_over()
 			self.drawImage()
 			self.displaySensorValues(self.rover)
-
-		# check footer
 
 	def updateValues(self):
 		if self.rover == "pacman":
@@ -353,8 +344,6 @@ class MyWindow(QMainWindow):
 			self.ghost2.irState = self.irState
 			#self.ghost2.prevState = self.previous
 			
-
-
 	def decideCoordinate(self, command):
 		if self.rover == "pacman":
 			if self.pacman.heading == "north":
@@ -646,21 +635,42 @@ class MyWindow(QMainWindow):
 	
 	def determine_closest_ghost(self):
 		ghost1 = self.determine_distance_ghost1(self.pacman.xPos, self.pacman.yPos)
+		#print("Ghost 1 distance = {}".format(ghost1))
 		ghost2 = self.determine_distance_ghost2(self.pacman.xPos, self.pacman.yPos)
+		#print("Ghost 2 distance = {}".format(ghost1))
 		if ghost1 == ghost2:
-			x = randint(0, 1)
-			print("Ghost are equidistant")
-			if x == 0:
-				close = ghost1
-			else:
-				close = ghost2
+			return "random"
 		else:
 			close = min([ghost1, ghost2])
 		if close == ghost1:
+			#print("Closest ghost: ghost 1")
 			return "ghost1"
 		else:
+			#print("Closest ghost: ghost 2")
 			return "ghost2"
 		
+	def game_over(self):
+		pacIP = "192.168.1.103"
+		ghost1IP = "192.168.1.104"
+		ghost2IP = "192.168.1.105"
+		if self.pacman.xPos == self.ghost1.xPos and self.pacman.yPos == self.ghost1.yPos and self.pacman.heading != self.ghost1.heading:
+			self.sendCommand.emit(Command.GAME_OVER, pacIP)
+			self.sendCommand.emit(Command.GAME_OVER, ghost1IP)
+			self.sendCommand.emit(Command.PAUSE, ghost2IP)
+			self.scoreChanged.emit("<font color='maroon'>" + str(self.score) + "</font>")
+			self.serverState = "Game Over"
+			self.stateChanged.emit(self.serverState)
+			#self.ui.scoreValue.setText("<font color='maroon'>" + self.score + "</font>") # Use this to change color on game over
+			#self.sendCommand.emit(Command.PAUSE, "all")
+		elif self.pacman.xPos == self.ghost2.xPos and self.pacman.yPos == self.ghost2.yPos and self.pacman.heading != self.ghost2.heading:
+			self.sendCommand.emit(Command.GAME_OVER, pacIP)
+			self.sendCommand.emit(Command.GAME_OVER, ghost2IP)
+			self.sendCommand.emit(Command.PAUSE, ghost1IP)
+			self.scoreChanged.emit("<font color='maroon'>" + str(self.score) + "</font>")
+			self.serverState = "Game Over"
+			self.stateChanged.emit(self.serverState)
+			#self.ui.scoreValue.setText("<font color='maroon'>" + self.score + "</font>") # Use this to change color on game over
+			#self.sendCommand.emit(Command.PAUSE, "all")
 		
 	def pacman_decision(self, possible_moves):
 		if len(possible_moves) == 1:
@@ -670,45 +680,43 @@ class MyWindow(QMainWindow):
 			move2 = possible_moves[1]
 			x1, y1, heading1 = self.pacManCoords(move1)
 			move1_dist1 = self.determine_distance_ghost1(x1, y1)
-			print("Move1_dist1")
-			print(move1_dist1)
+			#print("Move1_dist1 =", move1_dist1)
 			move1_dist2 = self.determine_distance_ghost2(x1, y1)
 			x2, y2, heading2 = self.pacManCoords(move2)
 			move2_dist1 = self.determine_distance_ghost1(x2, y2)
-			print("Move2_dist1")
-			print(move2_dist1)
+			#print("Move2_dist1 =", move2_dist1)
 			move2_dist2 = self.determine_distance_ghost2(x2, y2)
 			closer_ghost = self.determine_closest_ghost()
 			if closer_ghost == "ghost1":
-				print("closest ghost- "),
-				print("ghost1")
 				if move1_dist1 == move2_dist1:
-					print("Moves are Equidistant - Random Move")
+					#print("Moves are Equidistant - Random Move")
 					x = randint(0,1)
 					return possible_moves[x]
 				else:
 					best_dist = max([move1_dist1, move2_dist1])
-					print("Distance - "),
-					print(best_dist)
+					#print("Distance =", best_dist)
 					if best_dist == move1_dist1:
 						return move1
 					else:
 						return move2
 			elif closer_ghost == "ghost2":
-				print("closest ghost- "),
-				print("ghost2")
 				if move1_dist2 == move2_dist2:
-					print("Move is Equidistant - Random Move")
+					#print("Move is Equidistant - Random Move")
 					x = randint(0, 1)
 					return possible_moves[x]
 				else:
 					best_dist = max([move1_dist2, move2_dist2])
-					print("Distance - "),
-					print(best_dist)
+					#print("Distance =", best_dist)
 					if best_dist == move1_dist2:
 						return move1
 					else:
 						return move2
+			elif closer_ghost == "random":
+				best_dist = max([move1_dist1, move1_dist2, move2_dist1, move2_dist2])
+				if best_dist == move1_dist1 or best_dist == move1_dist2:
+					return move1
+				else:
+					return move2
 			
 		elif len(possible_moves) == 3:
 			move1 = possible_moves[0]
@@ -725,28 +733,26 @@ class MyWindow(QMainWindow):
 			move3_dist2 = self.determine_distance_ghost2(x3, y3)
 			closer_ghost = self.determine_closest_ghost()
 			if closer_ghost == "ghost1":
-				print("closest ghost- ghost 1")
 				if move1_dist1 == move2_dist1 and move1_dist1 == move3_dist1:
 					x = randint(0,2)
 					return possible_moves[x]
 				elif move1_dist1 == move2_dist1 and move3_dist1 < move1_dist1:
-					print("Move1 and Move2 are Equidistance - Random move")
+					#print("Move1 and Move2 are Equidistance - Random move")
 					x = randint(0, 1)
 					return possible_moves[x]
 				elif move1_dist1 == move3_dist1 and move2_dist1 < move1_dist1:
-					print("Move1 and Move3 are Equidistance - Random move")
+					#print("Move1 and Move3 are Equidistance - Random move")
 					x = randint(0, 1)
 					if x == 0:
 						return possible_moves[x]
 					else:
 						return possible_moves[2]
 				elif move2_dist1 == move3_dist1 and move1_dist1 < move2_dist1:
-					print("Move2 and Move3 are Equidistance - Random move")
+					#print("Move2 and Move3 are Equidistance - Random move")
 					x = randint(1, 2)
 					return possible_moves[x]
 				else:	
-					print("best distance - " )
-					print(best_dist)
+					#print("best distance =", best_dist)
 					best_dist = max([move1_dist1, move2_dist1, move3_dist1])
 					if best_dist == move1_dist1:
 						return move1
@@ -755,36 +761,42 @@ class MyWindow(QMainWindow):
 					else:
 						return move3
 			elif closer_ghost == "ghost2":
-				print("closest ghost - ghost2")
 				if move1_dist2 == move2_dist2 and move1_dist2 == move3_dist2:
-					print("Moves are Equidistant - Random Move")
+					#print("Moves are Equidistant - Random Move")
 					x = randint(0,2)
 					return possible_moves[x]
 				elif move1_dist2 == move2_dist2 and move3_dist2 < move1_dist2:
-					print("Move1 and Move2 are equidistant - random move")
+					#print("Move1 and Move2 are equidistant - random move")
 					x = randint(0, 1)
 					return possible_moves[x]
 				elif move1_dist2 == move3_dist2 and move2_dist2 < move1_dist2:
-					print("Move1 and Move3 are equidistant - random move")
+					#print("Move1 and Move3 are equidistant - random move")
 					x = randint(0, 1)
 					if x == 0:
 						return possible_moves[x]
 					else:
 						return possible_moves[2]
-				elif move2_dist2 == move3_dist2 and move1_dist < move2_dist2:
-					print("Move2 and move3 are equidistant - random move")
+				elif move2_dist2 == move3_dist2 and move1_dist2 < move2_dist2:
+					#print("Move2 and move3 are equidistant - random move")
 					x = randint(1, 2)
 					return possible_moves[x]
 				else:	
 					best_dist = max([move1_dist2, move2_dist2, move3_dist2])
-					print("best distance - ")
-					print(best_dist) 
+					#print("best distance =", best_dist)
 					if best_dist == move1_dist2:
 						return move1
 					elif best_dist == move2_dist2:
 						return move2
 					else:
 						return move3
+			elif closer_ghost == "random":
+				best_dist = max([move1_dist1, move1_dist2, move2_dist1, move2_dist2, move3_dist1, move3_dist2])
+				if best_dist == move1_dist1 or best_dist == move1_dist2:
+					return move1
+				elif best_dist == move2_dist1 or best_dist == move2_dist2:
+					return move2
+				else:
+					return move3
 				
 	def ghost1_decision(self, possible_moves):
 		if len(possible_moves) == 1:
@@ -796,6 +808,10 @@ class MyWindow(QMainWindow):
 			move1_dist = self.determine_distance_pacman(x1, y1)
 			x2, y2, heading2 = self.ghost1Coords(move2)
 			move2_dist = self.determine_distance_pacman(x2, y2)
+			if (x1, y1) == (self.ghost2.xPos, self.ghost2.yPos):
+				return move2
+			elif (x2, y2) == (self.ghost2.xPos, self.ghost2.yPos):
+				return move1
 			best_dist = min([move1_dist, move2_dist])
 			if best_dist == move1_dist:
 				return move1
@@ -811,6 +827,13 @@ class MyWindow(QMainWindow):
 			move2_dist = self.determine_distance_pacman(x2, y2)
 			x3, y3, heading3 = self.ghost1Coords(move3)
 			move3_dist = self.determine_distance_pacman(x3, y3)
+			if (x1, y1) == (self.ghost2.xPos, self.ghost2.yPos):
+				return move2
+			elif (x2, y2) == (self.ghost2.xPos, self.ghost2.yPos):
+				return move1
+			elif (x3, y3) == (self.ghost2.xPos, self.ghost2.yPos):
+				x = randint(0,1)
+				return possible_moves[x]
 			best_dist = min([move1_dist, move2_dist, move3_dist])
 			if best_dist == move1_dist:
 				return move1
@@ -829,6 +852,10 @@ class MyWindow(QMainWindow):
 			move1_dist = self.determine_distance_pacman(x1, y1)
 			x2, y2, heading2 = self.ghost2Coords(move2)
 			move2_dist = self.determine_distance_pacman(x2, y2)
+			if (x1, y1) == (self.ghost1.xPos, self.ghost1.yPos):
+				return move2
+			elif (x2, y2) == (self.ghost1.xPos, self.ghost1.yPos):
+				return move1
 			best_dist = min([move1_dist, move2_dist])
 			if best_dist == move1_dist:
 				return move1
@@ -844,6 +871,13 @@ class MyWindow(QMainWindow):
 			move2_dist = self.determine_distance_pacman(x2, y2)
 			x3, y3, heading3 = self.ghost2Coords(move3)
 			move3_dist = self.determine_distance_pacman(x3, y3)
+			if (x1, y1) == (self.ghost1.xPos, self.ghost1.yPos):
+				return move2
+			elif (x2, y2) == (self.ghost1.xPos, self.ghost1.yPos):
+				return move1
+			elif (x3, y3) == (self.ghost1.xPos, self.ghost1.yPos):
+				x = randint(0,1)
+				return possible_moves[x]
 			best_dist = min([move1_dist, move2_dist, move3_dist])
 			if best_dist == move1_dist:
 				return move1
@@ -853,7 +887,13 @@ class MyWindow(QMainWindow):
 				return move3
 				
 	def printCoords(self):
-		print("Pacman headed toward ({}, {})".format(self.pacman.xPos, self.pacman.yPos))
+		print("Pacman headed toward ({}, {}) with state {} and previous state {}".format(self.pacman.xPos, self.pacman.yPos, self.pacman.irState, self.pacman.prevState))
+		
+	def printGhost1Coords(self):
+		print("Ghost1 headed toward ({}, {}) with state {} and previous state {}".format(self.ghost1.xPos, self.ghost1.yPos, self.ghost1.irState, self.ghost1.prevState))
+
+	def printGhost2Coords(self):
+		print("Ghost2 headed toward ({}, {}) with state {} and previous state {}".format(self.ghost2.xPos, self.ghost2.yPos, self.ghost2.irState, self.ghost2.prevState))
 
 	def newCommand(self):
 		pacIP = "192.168.1.103"
@@ -865,48 +905,68 @@ class MyWindow(QMainWindow):
 
 		if self.rover == "pacman":
 			if self.pacman.irState == "01":  # Forward open, left blocked, right blocked
-				pass  # Make sure to put a check for game over condition here
+				pass
 			elif self.pacman.irState == "02":  # Forward open, left open, right open
 				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
-				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
+				if self.pacman.prevState == "01":
 					choice = self.pacman_decision(commands)
 					self.decideCoordinate(choice)
+					if choice == Command.FORWARD:
+						print("forward")
+					elif choice == Command.STOP_LEFT_FORWARD:
+						print("left")
+					elif choice == Command.STOP_RIGHT_FORWARD:
+						print("right")
 					self.printCoords()
 					self.sendCommand.emit(choice, pacIP)
 					self.score += 1
 			elif self.pacman.irState == "03":  # Forward blocked, left open, right open
 				commands = [Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
-				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
+				if self.pacman.prevState == "01":
 					choice = self.pacman_decision(commands)
 					self.decideCoordinate(choice)
+					if choice == Command.STOP_LEFT_FORWARD:
+						print("left")
+					elif choice == Command.STOP_RIGHT_FORWARD:
+						print("right")
 					self.printCoords()
 					self.sendCommand.emit(choice, pacIP)
 					self.score += 1
 			elif self.pacman.irState == "04":  # Forward blocked, left open, right blocked
-				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
+				if self.pacman.prevState == "01":
 					self.decideCoordinate(Command.STOP_LEFT_FORWARD)
+					print("left")
 					self.printCoords()
 					self.sendCommand.emit(Command.STOP_LEFT_FORWARD, pacIP)
 					self.score += 1
 			elif self.pacman.irState == "05":  # Forward blocked, left blocked, right open
-				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
+				if self.pacman.prevState == "01":
 					self.decideCoordinate(Command.STOP_RIGHT_FORWARD)
+					print("right")
 					self.printCoords()
 					self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, pacIP)
 					self.score += 1
 			elif self.pacman.irState == "06":  # Forward open, left open, right blocked
 				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD]
-				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
+				if self.pacman.prevState == "01":
 					choice = self.pacman_decision(commands)
 					self.decideCoordinate(choice)
+					if choice == Command.FORWARD:
+						print("forward")
+					elif choice == Command.STOP_LEFT_FORWARD:
+						print("left")
 					self.printCoords()
 					self.sendCommand.emit(choice, pacIP)
 					self.score += 1
 			elif self.pacman.irState == "07":  # Forward open, left blocked, right open
 				commands = [Command.FORWARD, Command.STOP_RIGHT_FORWARD]
-				if self.pacman.prevState == "01" or self.pacman.prevState == "00":
+				if self.pacman.prevState == "01":
 					choice = self.pacman_decision(commands)
 					self.decideCoordinate(choice)
+					if choice == Command.FORWARD:
+						print("forward")
+					elif choice == Command.STOP_RIGHT_FORWARD:
+						print("right")
 					self.printCoords()
 					self.sendCommand.emit(choice, pacIP)
 					self.score += 1
@@ -918,35 +978,41 @@ class MyWindow(QMainWindow):
 				pass
 			if self.ghost1.irState == "02":  # Forward open, left open, right open
 				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
-				if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
+				if self.ghost1.prevState == "01":
 					choice = self.ghost1_decision(commands)
 					self.decideCoordinate(choice)
+					self.printGhost1Coords()
 					self.sendCommand.emit(choice, ghost1IP)
 			if self.ghost1.irState == "03":  # Forward blocked, left open, right open
 				commands = [Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
-				if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
+				if self.ghost1.prevState == "01":
 					choice = self.ghost1_decision(commands)
 					self.decideCoordinate(choice)
+					self.printGhost1Coords()
 					self.sendCommand.emit(choice, ghost1IP)
 			if self.ghost1.irState == "04":  # Forward blocked, left open, right blocked
-				if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
+				if self.ghost1.prevState == "01":
 					self.decideCoordinate(Command.STOP_LEFT_FORWARD)
+					self.printGhost1Coords()
 					self.sendCommand.emit(Command.STOP_LEFT_FORWARD, ghost1IP)
 			if self.ghost1.irState == "05":  # Forward blocked, left blocked, right open
-				if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
+				if self.ghost1.prevState == "01":
 					self.decideCoordinate(Command.STOP_RIGHT_FORWARD)
+					self.printGhost1Coords()
 					self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, ghost1IP)
 			if self.ghost1.irState == "06":  # Forward open, left open, right blocked
 				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD]
-				if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
+				if self.ghost1.prevState == "01":
 					choice = self.ghost1_decision(commands)
 					self.decideCoordinate(choice)
+					self.printGhost1Coords()
 					self.sendCommand.emit(choice, ghost1IP)
 			if self.ghost1.irState == "07":  # Forward open, left blocked, right open
 				commands = [Command.FORWARD, Command.STOP_RIGHT_FORWARD]
-				if self.ghost1.prevState == "01" or self.ghost1.prevState == "00":
+				if self.ghost1.prevState == "01":
 					choice = self.ghost1_decision(commands)
 					self.decideCoordinate(choice)
+					self.printGhost1Coords()
 					self.sendCommand.emit(choice, ghost1IP)
 			self.ghost1.prevState = self.ghost1.irState
 
@@ -955,40 +1021,43 @@ class MyWindow(QMainWindow):
 				pass
 			if self.ghost2.irState == "02":  # Forward open, left open, right open
 				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
-				if self.ghost2.prevState == "01" or self.ghost2.prevState == "00":
+				if self.ghost2.prevState == "01":
 					choice = self.ghost2_decision(commands)
 					self.decideCoordinate(choice)
+					self.printGhost2Coords()
 					self.sendCommand.emit(choice, ghost2IP)
 			if self.ghost2.irState == "03":  # Forward blocked, left open, right open
 				commands = [Command.STOP_LEFT_FORWARD, Command.STOP_RIGHT_FORWARD]
-				if self.ghost2.prevState == "01" or self.ghost2.prevState == "00":
+				if self.ghost2.prevState == "01":
 					choice = self.ghost2_decision(commands)
 					self.decideCoordinate(choice)
+					self.printGhost2Coords()
 					self.sendCommand.emit(choice, ghost2IP)
 			if self.ghost2.irState == "04":  # Forward blocked, left open, right blocked
-				if self.ghost2.prevState == "01" or self.ghost2.prevState == "00":
-					
+				if self.ghost2.prevState == "01":
 					self.decideCoordinate(Command.STOP_LEFT_FORWARD)
-					self.sendCommand.emit(Command.STOP_LEFT_FORWARD, pacIP)
+					self.printGhost2Coords()
+					self.sendCommand.emit(Command.STOP_LEFT_FORWARD, ghost2IP)
 			if self.ghost2.irState == "05":  # Forward blocked, left blocked, right open
-				if self.ghost2.prevState == "01" or self.ghost2.prevState == "00":
-					
+				if self.ghost2.prevState == "01":
 					self.decideCoordinate(Command.STOP_RIGHT_FORWARD)
-					self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, pacIP)
+					self.printGhost2Coords()
+					self.sendCommand.emit(Command.STOP_RIGHT_FORWARD, ghost2IP)
 			if self.ghost2.irState == "06":  # Forward open, left open, right blocked
 				commands = [Command.FORWARD, Command.STOP_LEFT_FORWARD]
-				if self.ghost2.prevState == "01" or self.ghost2.prevState == "00":
+				if self.ghost2.prevState == "01":
 					choice = self.ghost2_decision(commands)
 					self.decideCoordinate(choice)
+					self.printGhost2Coords()
 					self.sendCommand.emit(choice, ghost2IP)
 			if self.ghost2.irState == "07":  # Forward open, left blocked, right open
 				commands = [Command.FORWARD, Command.STOP_RIGHT_FORWARD]
-				if self.ghost2.prevState == "01" or self.ghost2.prevState == "00":
+				if self.ghost2.prevState == "01":
 					choice = self.ghost2_decision(commands)
 					self.decideCoordinate(choice)
+					self.printGhost2Coords()
 					self.sendCommand.emit(choice, ghost2IP)
 			self.ghost2.prevState = self.ghost2.irState
-
 
 	def drawImage(self):
 		if self.irState == "00":
@@ -1020,7 +1089,6 @@ class MyWindow(QMainWindow):
 			self.lfPixmap = self.lfImage3
 		elif self.lfState == "04":
 			self.lfPixmap = self.lfImage4
-
 
 	def displaySensorValues(self, rover):
 		if rover == "pacman":
