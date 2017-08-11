@@ -270,7 +270,9 @@ class MyWindow(QMainWindow):
 		self.ui.overrideButton.setEnabled(False)
 		self.serverState = "Stopped"
 		self.stateChanged.emit(self.serverState)
+		self.scoreChanged.emit("<font color='maroon'>" + str(self.score) + "</font>")
 		self.server.closeServer()
+		self.score = 0
 
 	def autoMode(self):
 		self.ui.overrideButton.setEnabled(True)
@@ -675,28 +677,28 @@ class MyWindow(QMainWindow):
 		pacIP = "192.168.1.103"
 		ghost1IP = "192.168.1.104"
 		ghost2IP = "192.168.1.105"
-		if self.pacman.xPos == self.ghost1.xPos and self.pacman.yPos == self.ghost1.yPos and self.pacman.heading != self.ghost1.heading:
-			self.sendCommand.emit(Command.GAME_OVER, pacIP)
-			self.sendCommand.emit(Command.GAME_OVER, ghost1IP)
-			self.sendCommand.emit(Command.PAUSE, ghost2IP)
-			self.scoreChanged.emit("<font color='maroon'>" + str(self.score) + "</font>")
-			self.serverState = "Game Over"
-			self.stateChanged.emit(self.serverState)
-			self.ui.automaticButton.setEnabled(False)
-			self.ui.overrideButton.setEnabled(False)
-			#self.ui.scoreValue.setText("<font color='maroon'>" + self.score + "</font>") # Use this to change color on game over
-			#self.sendCommand.emit(Command.PAUSE, "all")
-		elif self.pacman.xPos == self.ghost2.xPos and self.pacman.yPos == self.ghost2.yPos and self.pacman.heading != self.ghost2.heading:
-			self.sendCommand.emit(Command.GAME_OVER, pacIP)
-			self.sendCommand.emit(Command.GAME_OVER, ghost2IP)
-			self.sendCommand.emit(Command.PAUSE, ghost1IP)
-			self.scoreChanged.emit("<font color='maroon'>" + str(self.score) + "</font>")
-			self.serverState = "Game Over"
-			self.stateChanged.emit(self.serverState)
-			self.ui.automaticButton.setEnabled(False)
-			self.ui.overrideButton.setEnabled(False)
-			#self.ui.scoreValue.setText("<font color='maroon'>" + self.score + "</font>") # Use this to change color on game over
-			#self.sendCommand.emit(Command.PAUSE, "all")
+		gameOver = False
+		if not gameOver:
+			if self.pacman.xPos == self.ghost1.xPos and self.pacman.yPos == self.ghost1.yPos and self.pacman.heading != self.ghost1.heading:
+				self.sendCommand.emit(Command.GAME_OVER, pacIP)
+				self.sendCommand.emit(Command.GAME_OVER, ghost1IP)
+				self.sendCommand.emit(Command.PAUSE, ghost2IP)
+				self.scoreChanged.emit("<font color='maroon'>" + str(self.score) + "</font>")
+				self.serverState = "Game Over"
+				self.stateChanged.emit(self.serverState)
+				self.ui.automaticButton.setEnabled(False)
+				self.ui.overrideButton.setEnabled(False)
+				gameOver = True
+			elif self.pacman.xPos == self.ghost2.xPos and self.pacman.yPos == self.ghost2.yPos and self.pacman.heading != self.ghost2.heading:
+				self.sendCommand.emit(Command.GAME_OVER, pacIP)
+				self.sendCommand.emit(Command.GAME_OVER, ghost2IP)
+				self.sendCommand.emit(Command.PAUSE, ghost1IP)
+				self.scoreChanged.emit("<font color='maroon'>" + str(self.score) + "</font>")
+				self.serverState = "Game Over"
+				self.stateChanged.emit(self.serverState)
+				self.ui.automaticButton.setEnabled(False)
+				self.ui.overrideButton.setEnabled(False)
+				gameOver = True
 
 	def pacman_decision(self, possible_moves):
 		if len(possible_moves) == 1:
